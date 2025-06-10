@@ -1,0 +1,30 @@
+# LinkByte/.gitignore
+
+# --- Global Ignores (apply anywhere in the repo) ---
+.env                        
+logs/                       
+*.log                       
+
+# --- Frontend (Vite React) Specific Ignores ---
+/LinkByte-FRONTEND/node_modules/ 
+/LinkByte-FRONTEND/dist/         
+/LinkByte-FRONTEND/dist-ssr/     
+/LinkByte-FRONTEND/*.local       
+/LinkByte-FRONTEND/npm-debug.log*
+/LinkByte-FRONTEND/yarn-debug.log*
+/LinkByte-FRONTEND/yarn-error.log*
+/LinkByte-FRONTEND/pnpm-debug.log* 
+/LinkByte-FRONTEND/lerna-debug.log* 
+
+# --- Backend (Flask) Specific Ignores ---
+/LinkByte-BACKEND/__pycache__/    
+/LinkByte-BACKEND/*.pyc           
+/LinkByte-BACKEND/.pytest_cache/  
+/LinkByte-BACKEND/.venv/          
+/LinkByte-BACKEND/instance/  
+/LinkByte-BACKEND/logs/           
+
+# --- Editor and OS Specific Ignores (Common) ---
+.vscode/                          # VS Code configuration directory
+*.ntvs* # Node.js Tools for Visual Studio cache
+*.njsproj                         # Node.js project file
