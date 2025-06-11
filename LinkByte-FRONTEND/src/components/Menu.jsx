@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-const Menu = ({isMob , isOn , onClose}) => {
+const Menu = ({ isMob, isOpen, onClose }) => {
   const menuref = useRef(null);
 
   const handleClickOutside = (e) => {
@@ -9,29 +9,27 @@ const Menu = ({isMob , isOn , onClose}) => {
     }
   };
   useEffect(() => {
-    if (isMob && isOn) {
+    if (isMob && isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
   }, [onClose]);
-  let menuClasses = "bg-amber-50 h-[100vh] absolute transition-all duration-300 ease-in-out ";
+  let menuClasses =
+    "bg-black h-[100vh] absolute transition-all duration-300 ease-in-out ";
 
-if (isMob) {
-  if (!isOn) {
-    menuClasses += "w-0 ";
-  }else{
-    menuClasses += "w-[66vw] ";
+  if (isMob) {
+    if (!isOpen) {
+      menuClasses += "w-0 ";
+    } else {
+      menuClasses += "w-[70vw] ";
+    }
+  } else {
+    menuClasses += "w-[40vw] relative ";
   }
-} else {
-  menuClasses += "w-[40vw] relative ";
-}
-  return (
-    <div
-      ref={menuref}
-      className={menuClasses}
-    ></div>
-  );
+  return <div ref={menuref} className={menuClasses}>
+    <div id="menuprofilearea" className={(!isMob?"hidden":(isOpen && "mx-2.5 ")+"h-[25%] border-b-1 border-b-gray-100")}></div>
+  </div>;
 };
 export default Menu;

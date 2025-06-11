@@ -14,7 +14,7 @@ const Header = ({ isMob }) => {
   
   return (
     <div className={"flex " + (isMob?"":"mx-[5vw]")}>
-      <Menu isMob={isMob} isOn={!isMob||ismenuopen} onClose={handleprofileclick}/>
+      <Menu isMob={isMob} isOpen={!isMob||ismenuopen} onClose={handleprofileclick}/>
       <div className="w-screen h-fit bg-gray-950 grid grid-cols-1">
         <div className="p-5 justify-between flex flex-row">
           <img
