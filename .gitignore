@@ -1,7 +1,8 @@
 # LinkByte/.gitignore
 
 # --- Global Ignores (apply anywhere in the repo) ---
-.env                        
+.env
+.env.devlopment                        
 logs/                       
 *.log                       
 

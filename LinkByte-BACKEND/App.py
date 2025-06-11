@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 import os
-import cloudinary
-import cloudinary.uploader
+import cloudinary # type: ignore
+import cloudinary.uploader # type: ignore
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
