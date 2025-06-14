@@ -1,9 +1,6 @@
 @import 'tailwindcss';
 
 @layer base {
-  :root {
-    --primary: 29 78 216; /* RGB for #1d4ed8 (blue-700) */
-  }
 }
 body{
   margin: 0;

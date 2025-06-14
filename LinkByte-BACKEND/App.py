@@ -2,21 +2,11 @@ from dotenv import load_dotenv
 import os
 import cloudinary # type: ignore
 import cloudinary.uploader # type: ignore
-from datetime import datetime
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 import Routes
-
+from Config import app,db
 load_dotenv()
-
-app = Flask(__name__)
+from flask_cors import CORS
 CORS(app)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
-
-db = SQLAlchemy(app)
 
 cloudinary.config(
     cloud_name=os.getenv("CLOUD_NAME"),
@@ -26,4 +16,6 @@ cloudinary.config(
 )
 Routes.register_routes(app)
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

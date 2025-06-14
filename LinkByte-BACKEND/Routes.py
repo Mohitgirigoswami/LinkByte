@@ -1,6 +1,13 @@
-from flask import jsonify
+from flask import jsonify, request
 from flask_cors import cross_origin
+from Model import Users,Otp
+from Config import db
 
+import bcrypt
+from Utility import is_valid_username,is_strong_password,genrate_otp
+import jwt
+import os
+from datetime import datetime, timedelta
 sample_posts = [
     {"id": 1, "title": "First Adventure", "imageUrl": "https://placehold.co/600x400/FF5733/FFFFFF?text=Post+1"},
     {"id": 2, "title": "City Lights", "imageUrl": "https://placehold.co/600x400/33FF57/000000?text=Post+2"},
@@ -41,3 +48,108 @@ def register_routes(app): # Define a function to register routes
             "totalPages": total_pages,
             "totalPosts": total_posts
         })
+
+    @app.route('/register', methods=['POST', 'OPTIONS'])
+    @cross_origin()
+    def register_user():
+        data = request.get_json()
+        username = data.get('Username')
+        email = data.get('Email')
+        password = data.get('Password')
+
+        existing_user = Users.query.filter_by(username=username).first()
+        try : 
+            if not is_valid_username:
+                return jsonify({'message': 'invalid username'}), 400
+            if not is_strong_password(password):
+                return jsonify({'message': 'weak password'}), 400
+            if existing_user:
+                if existing_user.status:
+                    return jsonify({'message': 'Username already exists'}), 400
+                else:
+                    db.session.delete(existing_user)
+                    db.session.commit()
+            
+            existing_email = Users.query.filter_by(email=email).first()
+            if existing_email:
+                if existing_email.status:
+                    return jsonify({'message': 'Email already exists'}), 400
+                else:
+                    db.session.delete(existing_email)
+                    db.session.commit()
+            
+            salt = bcrypt.gensalt()
+            hash_pass = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+            new_user = Users(username=username, email=email, hashed_password=hash_pass, signin_type='local',status = False)
+            db.session.add(new_user)
+            db.session.commit()
+            return jsonify({'message': 'User registeration initiated successfully\ncheck Email for OTP to verify OTP in next Step '}), 201
+        except Exception as e : 
+            print(e)
+            return jsonify({'message':'Internal server error'}), 500
+    
+    @app.route('/register/otp', methods=['POST', 'OPTIONS'])
+    @cross_origin()
+    def sendverotp():
+        data = request.get_json()
+        email = data.get('Email')
+        if not email:
+            return jsonify({'message': 'Email is required'}), 400
+        user = Users.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'message': 'Email is not associated with any account'}), 400
+        otp = genrate_otp(email,"veriemail")
+        if otp == 404 :
+            return jsonify({'message': 'Failed to generate OTP'}), 500
+        expiry_time = datetime.now() + timedelta(minutes=10)  # OTP valid for 10 minutes
+        otp_entry = Otp(user_id = user.id , otp=otp, expiry=expiry_time,purpose = "veriemail")
+        db.session.add(otp_entry)
+        db.session.commit()
+        return jsonify({'message': 'OTP sent to email', 'expiry': expiry_time.isoformat()}), 200
+    
+    @app.route('/register/verify', methods=['POST', 'OPTIONS'])
+    @cross_origin()
+    def verifyreg():
+        data = request.get_json()
+        email = data.get('Email')
+        otp = data.get('otp')
+        if not email:
+            return jsonify({'message': 'Email is required'}), 400
+        if not otp:
+            return jsonify({'message': 'OTP is required'}), 400
+
+        user = Users.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'message': 'Email is not associated with any account'}), 400
+
+        # Find the latest OTP for this user and purpose
+        otp_entry = Otp.query.filter_by(user_id=user.id, purpose="veriemail").order_by(Otp.expiry.desc()).first()
+        if not otp_entry:
+            return jsonify({'message': 'No OTP found for this user'}), 400
+        
+        if datetime.now() > otp_entry.expiry:
+            return jsonify({'message': 'OTP has expired'}), 400
+
+        if str(otp_entry.otp) != str(otp):
+            return jsonify({'message': 'Invalid OTP'}), 400
+
+        user.status = True
+        db.session.commit()
+        return jsonify({'message': 'Email verified successfully'}), 200
+    @app.route('/login', methods=['POST', 'OPTIONS'])
+    
+    @cross_origin()
+    def login_user():
+        data = request.get_json()
+        user = Users.query.filter_by(username = data['Username']).first()
+        if not user : 
+            return jsonify({'message':'user doesnot exist'}),400
+        if(data['signin_type'] == 'local'):
+            if user.status == False:
+                return jsonify({"message" : "Email Not Verified Create new Account"}) , 400
+            if bcrypt.checkpw(data['Password'].encode('utf-8'), user.hashed_password.encode('utf-8')):
+                # Generate JWT token
+                token = jwt.encode({'user_uuid': user.uuid, 'username': user.username},os.getenv("JWT_SECRET_KEY"), algorithm=os.getenv("JWT_ALGORITHM"))
+                return jsonify({'message': 'Login successful', 'token': token}), 200
+            else:
+                return jsonify({'message': 'Incorrect password'}), 401
