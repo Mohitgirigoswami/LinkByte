@@ -176,6 +176,7 @@ const Newpost = ({ user_pic_link }) => {
                 />
                 
                 <div
+                    disabled={loading}
                     ref={dropZoneRef}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -187,6 +188,8 @@ const Newpost = ({ user_pic_link }) => {
                     <p className="text-gray-400">
                         Drag and drop an image or video here, or{' '}
                         <button
+                            disabled={loading}
+                            type="button"
                             onClick={handleUploadClick}
                             className="text-blue-400 hover:text-blue-500"
                         >
@@ -211,6 +214,8 @@ const Newpost = ({ user_pic_link }) => {
                             />
                         )}
                         <button
+                            disabled={loading}
+                            type="button"
                             onClick={() => {
                                 setMediaFile(null);
                                 setPreviewUrl(null);
@@ -242,7 +247,7 @@ const Newpost = ({ user_pic_link }) => {
                         </svg>
                     </button>
                     <button
-                        disabled={!content && !mediaFile}
+                        disabled={loading && !content && !mediaFile}
                         onClick={handlePost}
                         className={`ml-auto px-4 py-1 rounded-full ${
                             !content && !mediaFile

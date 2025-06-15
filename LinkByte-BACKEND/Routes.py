@@ -202,8 +202,44 @@ def register_routes(app): # Define a function to register routes
             print(f"Error creating post: {str(e)}")
             db.session.rollback()
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
-    @app.route('/getpost')
+    @app.route('/getpost/<pageno>', methods=['POST', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
-    def getpost():
-        pass
+    def getpost(pageno):
+        try:
+            uuid = get_jwt_identity()
+            user = Users.query.filter_by(uuid=uuid).first()
+            if not user:
+                return jsonify({'message': 'User not found'}), 401
+
+            page = int(pageno)
+            per_page = 10  # Number of posts per page
+            
+            posts = Posts.query.order_by(Posts.Time.desc())\
+            .paginate(page=page, per_page=per_page, error_out=False)
+
+            if not posts.items:
+                return jsonify({'message': 'No posts found'}), 404
+            
+            posts_data = [{
+            'type': post.Type,
+            'authour_pic_link':Users.query.filter_by(id=post.user_id).first().profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
+            'content': post.Content,
+            'medialink': post.media_link,
+            'author': post.Authour,
+            'created_at': post.Time.isoformat(),
+            } for post in posts.items]
+
+            return jsonify({
+            'posts': posts_data,
+            'total_pages': posts.pages,
+            'current_page': posts.page
+            }), 200
+
+        except Exception as e:
+            print(f"Error fetching posts: {str(e)}")
+            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    @app.route('/health')
+    @cross_origin()
+    def health():
+        return jsonify({'status': 'healthy', 'message': 'Server is running'}), 200
