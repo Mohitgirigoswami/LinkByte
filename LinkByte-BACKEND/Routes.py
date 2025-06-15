@@ -1,54 +1,20 @@
 from flask import jsonify, request
 from flask_cors import cross_origin
-from Model import Users,Otp
-from Config import db
-
-import bcrypt
+from Model import Users,Otp,Posts
+from Config import db,jwt
+from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required
+import bcrypt,os# type: ignore
 from Utility import is_valid_username,is_strong_password,genrate_otp
-import jwt
-import os
+import cloudinary # type: ignore
+import cloudinary.uploader# type: ignore
 from datetime import datetime, timedelta
-sample_posts = [
-    {"id": 1, "title": "First Adventure", "imageUrl": "https://placehold.co/600x400/FF5733/FFFFFF?text=Post+1"},
-    {"id": 2, "title": "City Lights", "imageUrl": "https://placehold.co/600x400/33FF57/000000?text=Post+2"},
-    {"id": 3, "title": "Mountain Trails", "imageUrl": "https://placehold.co/600x400/3357FF/FFFFFF?text=Post+3"},
-    {"id": 4, "title": "Ocean Waves", "imageUrl": "https://placehold.co/600x400/FFFF33/000000?text=Post+4"},
-    {"id": 5, "title": "Forest Mystery", "imageUrl": "https://placehold.co/600x400/8D33FF/FFFFFF?text=Post+5"},
-    {"id": 6, "title": "Desert Bloom", "imageUrl": "https://placehold.co/600x400/FF33CC/000000?text=Post+6"},
-    {"id": 7, "title": "Urban Garden", "imageUrl": "https://placehold.co/600x400/33CCFF/000000?text=Post+7"},
-    {"id": 8, "title": "Starry Night", "imageUrl": "https://placehold.co/600x400/CCFF33/000000?text=Post+8"},
-    {"id": 9, "title": "Riverside Relax", "imageUrl": "https://placehold.co/600x400/FF8D33/FFFFFF?text=Post+9"},
-    {"id": 10, "title": "Historic Streets", "imageUrl": "https://placehold.co/600x400/8DFF33/000000?text=Post+10"},
-    {"id": 11, "title": "Cloudy Day", "imageUrl": "https://placehold.co/600x400/33FF8D/FFFFFF?text=Post+11"},
-    {"id": 12, "title": "Sunny Fields", "imageUrl": "https://placehold.co/600x400/FF338D/000000?text=Post+12"},
-    {"id": 13, "title": "Rainy Window", "imageUrl": "https://placehold.co/600x400/8D33FF/FFFFFF?text=Post+13"},
-    {"id": 14, "title": "Snowy Peaks", "imageUrl": "https://placehold.co/600x400/33FFCC/000000?text=Post+14"},
-    {"id": 15, "title": "Autumn Leaves", "imageUrl": "https://placehold.co/600x400/FFCC33/000000?text=Post+15"},
-]
-
+cloudinary.config(
+    cloud_name=os.getenv("CLOUD_NAME"),
+    api_key=os.getenv("API_KEY"),
+    api_secret=os.getenv("API_SECRET"),
+    secure=True
+)
 def register_routes(app): # Define a function to register routes
-    @app.route('/getpost/<int:pageno>', methods=['GET', 'OPTIONS'])
-    @cross_origin()
-    def getpost(pageno):
-        posts_per_page = 5
-        total_posts = len(sample_posts)
-        total_pages = (total_posts + posts_per_page - 1) // posts_per_page
-
-        if pageno < 1 or pageno > total_pages:
-            return jsonify({"error": f"Invalid page number. Please request a page between 1 and {total_pages}."}), 400
-
-        start_index = (pageno - 1) * posts_per_page
-        end_index = start_index + posts_per_page
-
-        paginated_posts = sample_posts[start_index:end_index]
-
-        return jsonify({
-            "posts": paginated_posts,
-            "currentPage": pageno,
-            "totalPages": total_pages,
-            "totalPosts": total_posts
-        })
-
     @app.route('/register', methods=['POST', 'OPTIONS'])
     @cross_origin()
     def register_user():
@@ -59,7 +25,7 @@ def register_routes(app): # Define a function to register routes
 
         existing_user = Users.query.filter_by(username=username).first()
         try : 
-            if not is_valid_username:
+            if not is_valid_username(username):
                 return jsonify({'message': 'invalid username'}), 400
             if not is_strong_password(password):
                 return jsonify({'message': 'weak password'}), 400
@@ -128,28 +94,116 @@ def register_routes(app): # Define a function to register routes
             return jsonify({'message': 'No OTP found for this user'}), 400
         
         if datetime.now() > otp_entry.expiry:
+            db.session.delete(otp_entry) # Add this line
+            db.session.commit()
             return jsonify({'message': 'OTP has expired'}), 400
 
         if str(otp_entry.otp) != str(otp):
             return jsonify({'message': 'Invalid OTP'}), 400
-
+        db.session.delete(otp_entry) # Add this line
+        db.session.commit() 
         user.status = True
         db.session.commit()
         return jsonify({'message': 'Email verified successfully'}), 200
-    @app.route('/login', methods=['POST', 'OPTIONS'])
     
+    @app.route('/login', methods=['POST', 'OPTIONS'])
     @cross_origin()
     def login_user():
         data = request.get_json()
-        user = Users.query.filter_by(username = data['Username']).first()
-        if not user : 
-            return jsonify({'message':'user doesnot exist'}),400
-        if(data['signin_type'] == 'local'):
-            if user.status == False:
-                return jsonify({"message" : "Email Not Verified Create new Account"}) , 400
-            if bcrypt.checkpw(data['Password'].encode('utf-8'), user.hashed_password.encode('utf-8')):
-                # Generate JWT token
-                token = jwt.encode({'user_uuid': user.uuid, 'username': user.username},os.getenv("JWT_SECRET_KEY"), algorithm=os.getenv("JWT_ALGORITHM"))
-                return jsonify({'message': 'Login successful', 'token': token}), 200
-            else:
-                return jsonify({'message': 'Incorrect password'}), 401
+        username  =  data.get('Username')
+        password  = data.get('Password')
+        signintype = data.get('signin_type')
+        try:
+            if not username or not password or not signintype:
+                return jsonify({'message' : 'incomplete data'}),400
+            user = Users.query.filter_by(username = username).first()
+            if not user : 
+                return jsonify({'message':'user doesnot exist'}),400
+            if(signintype == 'local'):
+                if user.status == False:
+                    return jsonify({"message" : "Email Not Verified Create new Account"}) , 400
+                if bcrypt.checkpw(password.encode('utf-8'), user.hashed_password.encode('utf-8')):
+                    # Generate JWT token
+                    token = create_access_token(identity=user.uuid)
+                    return jsonify({'message': 'Login successful', 'token': token}), 200
+                else:
+                    return jsonify({'message': 'Incorrect password'}), 401
+        except Exception as e:
+            print(e)
+            return {},500
+    @app.route('/post/getuploadurl', methods=['POST', 'OPTIONS'])
+    @cross_origin()
+    @jwt_required()
+    def get_upld_url():
+        uuid = get_jwt_identity()
+        user = Users.query.filter_by(uuid = uuid).first()
+        if not user:
+            return jsonify({'message':'Invalid user'}),401
+        try : 
+            data = request.get_json()
+            filetype = data.get('filetype')
+            filesize = data.get('filesize')
+            if filetype.startswith('video/') and filesize > 100 * 1024 * 1024: # 100 MB
+                return jsonify({'message': 'Video file size cannot exceed 100MB.'}), 400
+            if filetype.startswith('image/') and filesize > 10 * 1024 * 1024: # 10 MB
+                return jsonify({'message': 'Image file size cannot exceed 10MB.'}), 400
+            params_to_sign = {
+                'timestamp': int(datetime.now().timestamp()),
+            }
+            signature = cloudinary.utils.api_sign_request(
+                params_to_sign,
+                cloudinary.config().api_secret
+            )
+            print(signature)
+            return jsonify({
+                'signature': signature,
+                'timestamp': params_to_sign['timestamp'],
+                'api_key': cloudinary.config().api_key,
+                'cloudinary_cloud_name':cloudinary.config().cloud_name
+            }), 200
+        except Exception as e:
+            print(e)
+            return jsonify({'message':e}),500
+    @app.route('/post', methods=['POST', 'OPTIONS'])
+    @jwt_required()
+    @cross_origin()
+    def post():
+        try:
+            uuid = get_jwt_identity()
+            if not uuid:
+                return jsonify({'message': 'Invalid token'}), 401
+
+            # Debug print
+            print(f"UUID from token: {uuid}")
+            
+            user = Users.query.filter_by(uuid=uuid).first()
+            if not user:
+                return jsonify({'message': 'User not found'}), 401
+
+            data = request.get_json()
+            if not data:
+                return jsonify({'message': 'No data provided'}), 400
+
+            # Create new post with validated data
+            new_post = Posts(
+                user_id=int(user.id),
+                Type=data.get('type', 'text'),
+                Content=data.get('content', ''),
+                media_link=data.get('media_link'),
+                Authour=user.username
+            )
+
+            db.session.add(new_post)
+            db.session.commit()
+
+            return jsonify({'message': 'Post created successfully'}), 201
+
+        except Exception as e:
+            print(f"Error creating post: {str(e)}")
+            db.session.rollback()
+            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    @app.route('/getpost')
+    @jwt_required()
+    @cross_origin()
+    def getpost():
+        pass

@@ -94,6 +94,7 @@ const Register = ({ Classplus, handleSwitch }) => {
       }
       const data = await response.json();
       setOtpSuccess(data.message);
+      window.location.href = "/"; 
     } catch (error) {
       console.error("Error verifying OTP:", error);
     }

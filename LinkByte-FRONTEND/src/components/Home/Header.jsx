@@ -3,7 +3,7 @@ const Header = ({ isMobile , handlemenuclick }) => {
   return (
     <>
       {isMobile && (
-        <div className="w-[100vw] h-[10vh] bg-gray-950 border-b-2 border-gray-800 flex items-center justify-around text-gray-100">
+        <div className="h-[10vh] bg-gray-950 border-b-2 border-gray-800 flex items-center justify-around text-gray-100">
           <svg
             onClick={handlemenuclick}
             xmlns="http://www.w3.org/2000/svg"
@@ -28,11 +28,11 @@ const Header = ({ isMobile , handlemenuclick }) => {
           />
         </div>
       )}
-      <div className={"overflow-auto h-[4vh] bg-gray-900 flex flex-row  " + (isMobile? "w-[100vw]" : "w-[50vw]") }>
-        <span className="h-[80%] mx-2 my-auto p-2 px-4 ring-amber-50 ring-2 rounded-sm min-w-fit w-full text-gray-50 font-bold flex items-center justify-center">
+      <div className={"overflow-auto h-[4vh] bg-gray-900 flex flex-row rounded-xs"}>
+        <span className="h-[80%] mx-2 my-auto p-2 px-4 ring-gray-700 ring-2 rounded-sm min-w-fit w-full text-gray-50 font-bold flex items-center justify-center">
           For you
         </span>
-        <span className="h-[80%] mx-2 my-auto p-2 px-4 ring-amber-50 ring-2 rounded-sm min-w-fit w-full text-gray-50 font-bold flex items-center justify-center">
+        <span className="h-[80%] mx-2 my-auto p-2 px-4 ring-gray-700 ring-2 rounded-sm min-w-fit w-full text-gray-50 font-bold flex items-center justify-center">
           Following
         </span>
       </div>

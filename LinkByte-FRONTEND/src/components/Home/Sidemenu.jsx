@@ -13,7 +13,7 @@ const Sidemenu = ({ classplus, isMobile, sideMenuRef ,toggle }) => {
       <div  className="m-[5%] grid grid-cols-1 w-[90%] pb-5  border-b-2 border-gray-500">
         <div className=" flex flex-row">
         <img src="https://placehold.co/64X64/ffffff/000000/png" alt="profile pic" className="rounded-full ring-1 ring-blue-400"/>
-        <svg
+        {isMobile && <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"
           height="20"
@@ -28,7 +28,7 @@ const Sidemenu = ({ classplus, isMobile, sideMenuRef ,toggle }) => {
         >
           <line x1="4" y1="4" x2="16" y2="16" />
           <line x1="16" y1="4" x2="4" y2="16" />
-        </svg>
+        </svg>}
         </div>
         <p>username </p>
         <p className="text-gray-400 -mt-1 ">hello world</p>
@@ -40,25 +40,7 @@ const Sidemenu = ({ classplus, isMobile, sideMenuRef ,toggle }) => {
 
       </div>
     
-      <div className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <polyline points="16 17 21 12 16 7" />
-          <line x1="21" y1="12" x2="9" y2="12" />
-        </svg>
-        <p>Logout</p>
-        
-      </div>
+      
       <div className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -93,6 +75,24 @@ const Sidemenu = ({ classplus, isMobile, sideMenuRef ,toggle }) => {
           <line x1="12" y1="18" x2="12.01" y2="18" />
         </svg>
         <p>Help</p>
+      </div>
+      <div className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        <p>Logout</p>
       </div>
     </div>
   );

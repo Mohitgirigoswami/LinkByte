@@ -28,9 +28,9 @@ class Otp(db.Model):
         return f"<Otp user_id={self.user_id} otp={self.otp} used={self.is_used}>"
 
 class Posts(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True )
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    Authour = db.relationship('Users', backref='posts', lazy=True)
+    Authour = db.Column(db.String(80), nullable=False)
     isArchived = db.Column(db.Boolean, default=False, nullable=False)
     Content = db.Column(db.Text, nullable=False)
     Type = db.Column(db.String(20), nullable=False)

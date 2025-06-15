@@ -17,8 +17,8 @@ def is_valid_username(username):
     Valid usernames can only contain lowercase letters, numbers, periods, hyphens, and underscores.
     """
     pattern = r"^[a-z0-9\.\-_]+$"
-    if username in reserved_usernames:
-        return False
+    if username in reserved_usernames or len(username) > 15:
+        return False 
     return bool(re.match(pattern, username))
 
 def is_strong_password(password):

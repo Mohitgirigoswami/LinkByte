@@ -1,8 +1,9 @@
 import Header from "./Header";
 import React, { useEffect, useState, useRef, use } from "react";
 import Sidemenu from "./Sidemenu";
+import Posts from "./Posts";
 const Home = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [toggle, settoggle] = useState(true);
   const sideMenuRef = useRef(null);
   const handlemenuclick = () => {
@@ -11,7 +12,7 @@ const Home = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      setIsMobile(window.innerWidth < 768);
     };
     handleResize(); // Set initial state
     window.addEventListener("resize", handleResize);
@@ -23,19 +24,21 @@ const Home = () => {
 
 
   return (
-    <div className={(isMobile) ? "overflow-hidden" : "w-[75vw] mx-auto flex"}  > 
+    <div className={"flex flex-wrap " + (isMobile ? "overflow-hidden" : "w-[75vw] mx-auto")}  > 
       <Sidemenu
         isMobile={isMobile}
         classplus={(toggle ? "-translate-x-full" : "translate-x-0")}
         sideMenuRef={sideMenuRef}
         toggle={handlemenuclick}
       />
+      <div className="flex flex-col w-screen md:w-[49vw] h-screen">
+
       <Header
         isMobile={isMobile}
         handlemenuclick={isMobile && handlemenuclick}
       />
-      
-      </div>
+      <Posts isMobile={isMobile}/>
+        </div></div>
   );
 };
 export default Home;
