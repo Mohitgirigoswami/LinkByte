@@ -9,7 +9,7 @@ class Users(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     profile_pic_link = db.Column(db.String(255), nullable=True)
-    description = db.Column(db.Text, nullable=True)
+    bio = db.Column(db.Text, nullable=True)
     signin_type = db.Column(db.String(50), nullable=False)
     oauth_id = db.Column(db.String(256), nullable=True)
     hashed_password = db.Column(db.String(256), nullable=True)
@@ -36,6 +36,7 @@ class Posts(db.Model):
     Type = db.Column(db.String(20), nullable=False)
     Time = db.Column(db.DateTime, nullable=False, default=datetime.now)
     media_link = db.Column(db.String(255), nullable=True)
+    public_id = db.Column(db.String(255), nullable=True)
     
     def __repr__(self):
         return f"Post('{self.Content[:30]}...', Type='{self.Type}', Author='{self.Authour.Username if self.Authour else 'N/A'}')"

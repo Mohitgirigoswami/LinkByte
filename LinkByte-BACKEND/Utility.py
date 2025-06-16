@@ -27,15 +27,12 @@ def is_strong_password(password):
     A strong password should be at least 8 characters long and contain:
     - At least one lowercase letter
     - At least one uppercase letter
-    - At least one special character
     """
     if len(password) < 8:
         return False
     if not re.search(r"[a-z]", password):
         return False
     if not re.search(r"[A-Z]", password):
-        return False
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
         return False
     return True
 

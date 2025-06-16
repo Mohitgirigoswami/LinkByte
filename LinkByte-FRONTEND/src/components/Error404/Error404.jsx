@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // Assuming react-router-dom for navigation
 
-const Error404 = () => {
+const Error404 = ({error_msg = null}) => {
   const navigate = useNavigate();
 
   const handleGoHome = () => {
@@ -19,7 +19,7 @@ const Error404 = () => {
         404
       </h1>
       <h2 className="text-3xl md:text-4xl font-semibold text-red-500 mb-6">
-        Page Not Found
+        {error_msg || "Page Not Found"}
       </h2>
 
       <p className="text-lg md:text-xl text-center max-w-xl mb-8">

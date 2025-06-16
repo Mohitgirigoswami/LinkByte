@@ -1,7 +1,9 @@
 import Post from "./Post";
 import Newpost from "./Newpost";
 import React, { useEffect, useState } from "react";
+import SkeletonPost from "./Skeltonpost";
 const Posts = ({isMobile}) => {
+    const [isLoading, setIsLoading] = useState(true);
     const [pageNo, setPageNo] = useState(1);
     const getPosts = async () => {
         const response = await fetch(`http://127.0.0.1:5000/getpost/${pageNo}`, {
@@ -20,6 +22,7 @@ const Posts = ({isMobile}) => {
                 return [];
             }
             setPosts(prevPosts => [...prevPosts, ...data.posts]);
+            setIsLoading(false);
             return data.posts;
         }
     
@@ -42,18 +45,21 @@ const Posts = ({isMobile}) => {
             <Newpost
                 user_pic_link="https://randomuser.me/api/portraits/men/7.jpg"
             />
-            {posts.map((post, index) => (
+            {!isLoading && posts.map((post, index) => (
                 <Post
                     key={index}
                     type={post.type}
                     medialink={post.medialink}
                     authour={post.author}
-                    time={post.time}
+                    time={post.created_at}
                     content={post.content}
                     authour_profile_link={post.authour_profile_link || null}
                     authour_pic_link={post.authour_pic_link}
                 />
             ))}
+            {isLoading &&  [...Array(20)].map((_, index) => (
+          <SkeletonPost key={index} /> 
+        ))}
         </div>
     )
 }

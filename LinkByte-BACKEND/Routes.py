@@ -132,8 +132,8 @@ def register_routes(app): # Define a function to register routes
             print(e)
             return {},500
     @app.route('/post/getuploadurl', methods=['POST', 'OPTIONS'])
-    @cross_origin()
     @jwt_required()
+    @cross_origin()
     def get_upld_url():
         uuid = get_jwt_identity()
         user = Users.query.filter_by(uuid = uuid).first()
@@ -183,13 +183,22 @@ def register_routes(app): # Define a function to register routes
             data = request.get_json()
             if not data:
                 return jsonify({'message': 'No data provided'}), 400
-
+            # Validate and extract media link info
+            media_link = data.get('media_link')
+            public_id = None
+            if media_link:
+                try:
+                    public_id = media_link.split('/')[-1].split('.')[0]
+                    data['media_link'] = media_link
+                except:
+                    return jsonify({'message': 'Invalid media link format'}), 400
             # Create new post with validated data
             new_post = Posts(
                 user_id=int(user.id),
                 Type=data.get('type', 'text'),
                 Content=data.get('content', ''),
                 media_link=data.get('media_link'),
+                public_id= public_id,
                 Authour=user.username
             )
 
@@ -243,3 +252,65 @@ def register_routes(app): # Define a function to register routes
     @cross_origin()
     def health():
         return jsonify({'status': 'healthy', 'message': 'Server is running'}), 200
+    @app.route('/user/<username>', methods=['GET', 'OPTIONS'])
+    @jwt_required()
+    @cross_origin()
+    def get_user_info(username):
+        if not username:
+            return jsonify({'message':'username required'}),402
+        uuid = get_jwt_identity()
+        current_user = Users.query.filter_by(uuid = uuid).first()
+        if not current_user:
+            return jsonify({'message': 'Invalid token'}), 401
+            
+        user = Users.query.filter_by(username = username).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        return jsonify({
+            'isself': username == current_user.username,
+            'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
+            'bio': user.bio or ""
+        }), 200
+    @app.route('/user/<username>/post/<pageno>', methods=['GET', 'OPTIONS'])
+    @jwt_required()
+    @cross_origin()
+    def get_user_post(username,pageno):
+        try:
+            uuid = get_jwt_identity()
+            current_user = Users.query.filter_by(uuid=uuid).first()
+            if not current_user:
+                return jsonify({'message': 'Invalid token'}), 401
+
+            user = Users.query.filter_by(username=username).first()
+            if not user:
+                return jsonify({'message': 'User not found'}), 404
+
+            page = int(pageno)
+            per_page = 10
+
+            posts = Posts.query.filter_by(user_id=user.id)\
+                .order_by(Posts.Time.desc())\
+                .paginate(page=page, per_page=per_page, error_out=False)
+
+            if not posts.items:
+                return jsonify({'message': 'No posts found'}), 404
+
+            posts_data = [{
+                'type': post.Type or 'text',
+                'authour_pic_link': user.profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
+                'content': post.Content,
+                'medialink': post.media_link,
+                'author': post.Authour,
+                'created_at': post.Time.isoformat(),
+            } for post in posts.items]
+
+            return jsonify({
+                'posts': posts_data,
+                'total_pages': posts.pages,
+                'current_page': posts.page
+            }), 200
+
+        except Exception as e:
+            print(f"Error fetching user posts: {str(e)}")
+            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
