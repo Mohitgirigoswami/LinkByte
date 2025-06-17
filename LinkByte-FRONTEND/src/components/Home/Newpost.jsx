@@ -138,7 +138,7 @@ const Newpost = ({ user_pic_link }) => {
             formData.append('api_key', data.api_key);
             formData.append('timestamp', data.timestamp);
             formData.append('signature', data.signature);
-
+            formData.append('folder', data.folder);
             const cloudinaryResponse = await fetch(
                 `https://api.cloudinary.com/v1_1/${data.cloudinary_cloud_name}/${resourceType}/upload`,
                 {

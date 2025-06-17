@@ -5,6 +5,7 @@ import Posts from "./Posts";
 import Profile from "../Profile/Profile";
 import Error404 from "../Error404/Error404";
 const Home = () => {
+  
   const [username, setusername] = useState("");
   const [is404,setIs404] = useState(false)
   const call_404 = () => {
@@ -16,6 +17,14 @@ const Home = () => {
   const handlemenuclick = () => {
     settoggle(!toggle);
   };
+  const [overlaycontent,setOverLayContent]=useState(null);
+
+  const create_overlay = (content) => {
+    setOverLayContent(content)
+  }
+  const remove_overlay = () => {
+    setOverLayContent(null)
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -32,12 +41,18 @@ const Home = () => {
     return <Error404 />
   }
 
-  return (
+  return (<>
+  {overlaycontent &&
+      <div className="flex flex-row items-center fixed justify-center z-20 backdrop-blur-xs h-screen w-screen">
+        {overlaycontent}
+      </div>}
     <div
       className={
         "flex flex-wrap " + (isMobile ? "overflow-hidden" : "w-[75vw] mx-auto")
       }
     >
+      
+      
       <Sidemenu
         isMobile={isMobile}
         classplus={toggle ? "-translate-x-full" : "translate-x-0"}
@@ -45,7 +60,10 @@ const Home = () => {
         toggle={handlemenuclick}
       />
       {(window.location.pathname.split("/")[1] == "user") ? (
-        <Profile call_404={call_404} />
+        <Profile 
+        setOverLayContent={setOverLayContent}
+        remove_overlay={remove_overlay}
+        call_404={call_404} />
       ) : (
         <div className="flex flex-col w-screen md:w-[49vw] h-screen">
           <Header
@@ -56,6 +74,7 @@ const Home = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 export default Home;

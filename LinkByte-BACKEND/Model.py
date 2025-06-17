@@ -9,6 +9,7 @@ class Users(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     profile_pic_link = db.Column(db.String(255), nullable=True)
+    profile_bnr_link = db.Column(db.String(255), nullable=True)
     bio = db.Column(db.Text, nullable=True)
     signin_type = db.Column(db.String(50), nullable=False)
     oauth_id = db.Column(db.String(256), nullable=True)
@@ -30,7 +31,6 @@ class Otp(db.Model):
 class Posts(db.Model):
     id = db.Column(db.Integer, primary_key=True )
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    Authour = db.Column(db.String(80), nullable=False)
     isArchived = db.Column(db.Boolean, default=False, nullable=False)
     Content = db.Column(db.Text, nullable=False)
     Type = db.Column(db.String(20), nullable=False)
@@ -39,4 +39,4 @@ class Posts(db.Model):
     public_id = db.Column(db.String(255), nullable=True)
     
     def __repr__(self):
-        return f"Post('{self.Content[:30]}...', Type='{self.Type}', Author='{self.Authour.Username if self.Authour else 'N/A'}')"
+        return f"Post('{self.Content[:30]}...', Type='{self.Type}')"

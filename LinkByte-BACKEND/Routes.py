@@ -149,6 +149,7 @@ def register_routes(app): # Define a function to register routes
                 return jsonify({'message': 'Image file size cannot exceed 10MB.'}), 400
             params_to_sign = {
                 'timestamp': int(datetime.now().timestamp()),
+                'folder': uuid
             }
             signature = cloudinary.utils.api_sign_request(
                 params_to_sign,
@@ -159,7 +160,8 @@ def register_routes(app): # Define a function to register routes
                 'signature': signature,
                 'timestamp': params_to_sign['timestamp'],
                 'api_key': cloudinary.config().api_key,
-                'cloudinary_cloud_name':cloudinary.config().cloud_name
+                'cloudinary_cloud_name':cloudinary.config().cloud_name,
+                'folder':uuid
             }), 200
         except Exception as e:
             print(e)
@@ -198,8 +200,7 @@ def register_routes(app): # Define a function to register routes
                 Type=data.get('type', 'text'),
                 Content=data.get('content', ''),
                 media_link=data.get('media_link'),
-                public_id= public_id,
-                Authour=user.username
+                public_id= public_id
             )
 
             db.session.add(new_post)
@@ -235,7 +236,7 @@ def register_routes(app): # Define a function to register routes
             'authour_pic_link':Users.query.filter_by(id=post.user_id).first().profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
             'content': post.Content,
             'medialink': post.media_link,
-            'author': post.Authour,
+            'author': Users.query.filter_by(id=post.user_id).first().username or "N/A",
             'created_at': post.Time.isoformat(),
             } for post in posts.items]
 
@@ -270,6 +271,7 @@ def register_routes(app): # Define a function to register routes
         return jsonify({
             'isself': username == current_user.username,
             'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
+            'banner_link':user.profile_bnr_link or 'https://placehold.co/600x600',
             'bio': user.bio or ""
         }), 200
     @app.route('/user/<username>/post/<pageno>', methods=['GET', 'OPTIONS'])
@@ -301,7 +303,7 @@ def register_routes(app): # Define a function to register routes
                 'authour_pic_link': user.profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
                 'content': post.Content,
                 'medialink': post.media_link,
-                'author': post.Authour,
+                'author': user.username,
                 'created_at': post.Time.isoformat(),
             } for post in posts.items]
 
@@ -313,4 +315,68 @@ def register_routes(app): # Define a function to register routes
 
         except Exception as e:
             print(f"Error fetching user posts: {str(e)}")
+            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    @app.route('/user/edit', methods=["PATCH", "OPTIONS"])
+    @jwt_required()
+    @cross_origin()
+    def edit_user():
+        try:
+            uuid = get_jwt_identity()
+            user = Users.query.filter_by(uuid=uuid).first()
+            
+            if not user:
+                return jsonify({'message': 'User not found'}), 404
+
+            data = request.get_json()
+            if not data:
+                return jsonify({'message': 'No data provided'}), 400
+
+            # Handle username update
+            if 'username' in data:
+                new_username = data['username']
+                # Check if username is valid
+                if not is_valid_username(new_username):
+                    return jsonify({'message': 'Invalid username format'}), 400
+                # Check if username is already taken
+                existing_user = Users.query.filter_by(username=new_username).first()
+                if existing_user and existing_user.id != user.id:
+                    return jsonify({'message': 'Username already taken'}), 400
+                user.username = new_username
+
+            # Handle bio update
+            if 'bio' in data:
+                user.bio = data['bio']
+
+            # Handle profile picture update
+            if 'profile_pic_link' in data:
+                # Delete old profile picture from Cloudinary if exists
+                if user.profile_pic_link:
+                    try:
+                        old_public_id = user.profile_pic_link.split('/')[-1].split('.')[0]
+                        cloudinary.uploader.destroy(old_public_id)
+                    except Exception as e:
+                        print(f"Error deleting old profile picture: {str(e)}")
+                user.profile_pic_link = data['profile_pic_link']
+
+            if 'banner_link' in data:
+                if user.profile_bnr_link:
+                    try:
+                        old_public_id = user.profile_bnr_link.split('/')[-1].split('.')[0]
+                        cloudinary.uploader.destroy(old_public_id)
+                    except Exception as e:
+                        print(f"Error deleting old banner: {str(e)}")
+                user.profile_bnr_link = data['banner_link']
+
+            db.session.commit()
+            return jsonify({
+                'message': 'Profile updated successfully',
+                'username': user.username,
+                'bio': user.bio,
+                'profile_pic_link': user.profile_pic_link,
+                'banner_link': user.profile_bnr_link
+            }), 200
+
+        except Exception as e:
+            print(f"Error updating user profile: {str(e)}")
+            db.session.rollback()
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500

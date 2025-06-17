@@ -34,6 +34,7 @@ const Login = ({Classplus="" , handleSwitch}) => {
         throw new Error("No token received");
       }
       localStorage.setItem('jwtToken', token);
+      localStorage.setItem('username', Username);
       window.location.href = "/home";
     } catch (error) {
 

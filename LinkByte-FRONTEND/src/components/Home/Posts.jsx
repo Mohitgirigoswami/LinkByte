@@ -2,7 +2,7 @@ import Post from "./Post";
 import Newpost from "./Newpost";
 import React, { useEffect, useState } from "react";
 import SkeletonPost from "./Skeltonpost";
-const Posts = ({isMobile}) => {
+const Posts = ({isMobile ,}) => {
     const [isLoading, setIsLoading] = useState(true);
     const [pageNo, setPageNo] = useState(1);
     const getPosts = async () => {
@@ -38,12 +38,34 @@ const Posts = ({isMobile}) => {
         fetchPosts();
     }, [pageNo]);
     const [posts, setPosts] = useState([]);
+    const [picLink, setPicLink] = useState("https://randomuser.me/api/portraits/men/7.jpg");
+
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                const username = localStorage.getItem('username');
+                const response = await fetch(`http://127.0.0.1:5000/user/${username}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    },
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setPicLink(data.profile_pic || "");
+                }
+            } catch (error) {
+                console.error("Error fetching user info:", error);
+            }
+        };
+        fetchUserInfo();
+    }, []);
+
     return (
         <div  className={
             "no-scrollbar overflow-x-hidden overflow-y-auto gap-1 grid grid-cols-1 mt-1 flex-1 mx-1 h-[85vh] md:h-[95vh]"
         }>
             <Newpost
-                user_pic_link="https://randomuser.me/api/portraits/men/7.jpg"
+                user_pic_link={picLink}
             />
             {!isLoading && posts.map((post, index) => (
                 <Post
@@ -58,8 +80,8 @@ const Posts = ({isMobile}) => {
                 />
             ))}
             {isLoading &&  [...Array(20)].map((_, index) => (
-          <SkeletonPost key={index} /> 
-        ))}
+                <SkeletonPost key={index} /> 
+            ))}
         </div>
     )
 }

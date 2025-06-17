@@ -4,19 +4,25 @@ import Error404 from "../Error404/Error404";
 import Post from "../Home/Post";
 import { useNavigate } from "react-router-dom";
 import SkeletonPost from "../Home/Skeltonpost";
+import Edit_Profile from "./Edit_Profile";
 
-const Profile = ({ call_404 }) => {
+const Profile = ({ call_404 , setOverLayContent , remove_overlay }) => {
   const { username } = useParams();
   const [isvalid, setIsvalid] = useState(true);
   const [pageno, setPageno] = useState(1);
   const [posts, setPosts] = useState([]);
+  const [isself, setIsself] = useState(false);
   const [bio, setBio] = useState("");
+  const [isediting, setIsediting] = useState(false);
   const [profile_pic_link, setPiclink] = useState(
     "https://placehold.co/600x600"
   );
+  const [profile_bnr_link, setBnrlink] = useState(
+    "https://placehold.co/600x600"
+  );
   const navigate = useNavigate(); // <-- Get the navigate function here
-  const [ispostloading,setispostloading]=useState(true)
-  
+  const [ispostloading, setispostloading] = useState(true);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -30,8 +36,10 @@ const Profile = ({ call_404 }) => {
 
         if (response.ok) {
           const data = await response.json();
+          setIsself(data.isself);
           setBio(data.bio || "");
-          setPiclink(data.profile_pic_link || "https://placehold.co/600x400");
+          setPiclink(data.profile_pic || "https://placehold.co/600x400");
+          setBnrlink(data.banner_link || "https://placehold.co/600x200");
           setIsvalid(true);
         } else if (response.status === 404) {
           setIsvalid(false);
@@ -68,7 +76,7 @@ const Profile = ({ call_404 }) => {
         if (response.ok) {
           const data = await response.json();
           setPosts([...posts, ...data.posts]);
-          setispostloading(false)
+          setispostloading(false);
         } else if (response.status === 404) {
           setIsvalid(false);
         } else if (response.status === 450) {
@@ -88,13 +96,14 @@ const Profile = ({ call_404 }) => {
   if (!isvalid) {
     call_404();
   }
+  
   return (
     <>
       <div className="overflow-y-auto no-scrollbar md:h-[99vh] h-screen w-screen bg-gray-900 md:mt-[1vh] md:mx-[0.4vw] md:w-[49vw]">
-        <div className="pl-5 flex flex-row items-center z-50 fixed flex-1 h-12 bg-gray-900 w-screen md:w-[49vw]">
+        <div className="pl-5 flex flex-row items-center z-10 fixed flex-1 h-12 bg-gray-900 w-screen md:w-[49vw]">
           <svg
             onClick={() => {
-              navigate(-1)
+              navigate(-1);
             }}
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -109,12 +118,32 @@ const Profile = ({ call_404 }) => {
             <path d="M19 12H5" />
             <path d="M12 19L5 12L12 5" />
           </svg>
-          <span className="font-bold pl-5">{username}</span>
+          <span className="font-bold pl-5 text-xl hover:bg-gray-400 hover:text-black">
+            {username}
+          </span>
+          <span className="flex-grow"></span>
+          {isself && (
+            <button
+              onClick={() => {
+                setOverLayContent(<Edit_Profile
+          username={username}
+          bio={bio}
+          profile_pic_link={profile_pic_link}
+          back = {remove_overlay}
+          banner_link={profile_bnr_link}
+
+      />)
+              }}
+              className="p-1 px-5 mr-5 font-semibold rounded-xl ring-1 ring-gray-400 hover:bg-white hover:text-black transition-colors duration-200"
+            >
+              Edit
+            </button>
+          )}
         </div>
         <div className="mt-12 flex flex-col items-center p-1.5 sm:p-4 relative">
           <img
             className="object-cover w-full aspect-3/1 border-b-[1px] border-b-gray-400"
-            src="https://placehold.co/900X300/000000/FFF"
+            src={profile_bnr_link}
             alt="banner"
           />
           <img
@@ -127,11 +156,8 @@ const Profile = ({ call_404 }) => {
             <pre className=" w-full text-gray-300">{bio}</pre>
           </div>
         </div>
-        {
-          ispostloading && [...Array(20)].map((_, index) => (
-          <SkeletonPost key={index} /> 
-        ))
-        }
+        {ispostloading &&
+          [...Array(20)].map((_, index) => <SkeletonPost key={index} />)}
         {posts.map((post, index) => (
           <Post
             key={index}
