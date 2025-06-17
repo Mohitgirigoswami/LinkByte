@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from flask_cors import cross_origin
-from Model import Users,Otp,Posts
+from Model import Users,Otp,Posts,Reaction
 from Config import db,jwt
 from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required
 import bcrypt,os# type: ignore
@@ -8,6 +8,7 @@ from Utility import is_valid_username,is_strong_password,genrate_otp
 import cloudinary # type: ignore
 import cloudinary.uploader# type: ignore
 from datetime import datetime, timedelta
+from sqlalchemy.orm import joinedload
 cloudinary.config(
     cloud_name=os.getenv("CLOUD_NAME"),
     api_key=os.getenv("API_KEY"),
@@ -64,11 +65,11 @@ def register_routes(app): # Define a function to register routes
         user = Users.query.filter_by(email=email).first()
         if not user:
             return jsonify({'message': 'Email is not associated with any account'}), 400
-        otp = genrate_otp(email,"veriemail")
+        otp = genrate_otp(email,"VERIFY EMAIL")
         if otp == 404 :
             return jsonify({'message': 'Failed to generate OTP'}), 500
         expiry_time = datetime.now() + timedelta(minutes=10)  # OTP valid for 10 minutes
-        otp_entry = Otp(user_id = user.id , otp=otp, expiry=expiry_time,purpose = "veriemail")
+        otp_entry = Otp(user_id = user.id , otp=otp, expiry=expiry_time,purpose = "VERIFY EMAIL")
         db.session.add(otp_entry)
         db.session.commit()
         return jsonify({'message': 'OTP sent to email', 'expiry': expiry_time.isoformat()}), 200
@@ -218,32 +219,49 @@ def register_routes(app): # Define a function to register routes
     def getpost(pageno):
         try:
             uuid = get_jwt_identity()
-            user = Users.query.filter_by(uuid=uuid).first()
-            if not user:
+            current_user = Users.query.filter_by(uuid=uuid).first()
+            if not current_user:
                 return jsonify({'message': 'User not found'}), 401
 
             page = int(pageno)
-            per_page = 10  # Number of posts per page
-            
-            posts = Posts.query.order_by(Posts.Time.desc())\
-            .paginate(page=page, per_page=per_page, error_out=False)
+            per_page = 10
+
+            posts_query = Posts.query.order_by(Posts.Time.desc()).options(db.joinedload(Posts.author))
+
+            posts = posts_query.paginate(page=page, per_page=per_page, error_out=False)
 
             if not posts.items:
                 return jsonify({'message': 'No posts found'}), 404
-            
-            posts_data = [{
-            'type': post.Type,
-            'authour_pic_link':Users.query.filter_by(id=post.user_id).first().profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
-            'content': post.Content,
-            'medialink': post.media_link,
-            'author': Users.query.filter_by(id=post.user_id).first().username or "N/A",
-            'created_at': post.Time.isoformat(),
-            } for post in posts.items]
+
+            posts_data = []
+            for post in posts.items:
+                author_username = post.author.username if post.author else "N/A"
+                author_pic_link = post.author.profile_pic_link if post.author and post.author.profile_pic_link else 'https://placehold.co/600x600'
+
+                total_reactions = post.reactions.count()
+
+                current_user_reaction_type = None
+                if current_user:
+                    user_reaction = Reaction.query.filter_by(user_id=current_user.id, post_id=post.id).first()
+                    if user_reaction:
+                        current_user_reaction_type = user_reaction.emoji_type
+
+                posts_data.append({
+                    'type': post.Type,
+                    'authour_pic_link': author_pic_link,
+                    'content': post.Content,
+                    'medialink': post.media_link,
+                    'author': author_username,
+                    'created_at': post.Time.isoformat(),
+                    'post_uuid': post.uuid,
+                    'total_reactions': total_reactions,
+                    'current_user_reaction': current_user_reaction_type
+                })
 
             return jsonify({
-            'posts': posts_data,
-            'total_pages': posts.pages,
-            'current_page': posts.page
+                'posts': posts_data,
+                'total_pages': posts.pages,
+                'current_page': posts.page
             }), 200
 
         except Exception as e:
@@ -253,6 +271,22 @@ def register_routes(app): # Define a function to register routes
     @cross_origin()
     def health():
         return jsonify({'status': 'healthy', 'message': 'Server is running'}), 200
+    
+    @app.route('/myinfo' , methods=['GET', 'OPTIONS'])
+    @jwt_required()
+    @cross_origin()
+    def get_my_info():
+        uuid = get_jwt_identity()
+        user = Users.query.filter_by(uuid = uuid).first()
+        if not user:
+            return jsonify({'message': 'Invalid token'}), 401
+        return jsonify({
+            'username': user.username,
+            'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
+            'banner_link':user.profile_bnr_link or 'https://placehold.co/600x600',
+            'bio': user.bio or ""
+        }), 200
+    
     @app.route('/user/<username>', methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
@@ -274,6 +308,8 @@ def register_routes(app): # Define a function to register routes
             'banner_link':user.profile_bnr_link or 'https://placehold.co/600x600',
             'bio': user.bio or ""
         }), 200
+        
+    
     @app.route('/user/<username>/post/<pageno>', methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()

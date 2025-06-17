@@ -165,7 +165,7 @@ const Newpost = ({ user_pic_link }) => {
 
     return (
         <div className="p-2.5 rounded-xl h-fit w-full flex flex-row bg-gray-900">
-            <img className="w-10 h-10 rounded-full mr-1" src={user_pic_link} alt="profile pic" />
+            <img className="w-10 h-10 rounded-full mr-1" src={user_pic_link || 'https://placehold.co/600x600'} alt="profile pic" />
             <div className="flex flex-col w-full gap-2 px-2">
                 <textarea
                     value={content}

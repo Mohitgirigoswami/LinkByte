@@ -30,6 +30,7 @@ const Post = ({
               <p className="text-gray-400 text-sm">{relativeTime}</p>
             </div>
             <div  className="flex-1">
+              <p className="text-wrap text-gray-200">{content}</p>
               {medialink && type === "video" &&
               <video
                 className="w-full h-auto rounded-lg mt-2"
@@ -44,7 +45,6 @@ const Post = ({
                 className="flex-1 h-auto rounded-lg mt-2"
                 src={medialink}
                 alt="post media"/>}
-              <p className="text-wrap text-gray-200">{content}</p>
             </div>
           </div>
         </div>)

@@ -7,7 +7,7 @@ const Edit_Profile = ({ username, bio, profile_pic_link, banner_link,back }) => 
   const [profilePicPreviewUrl, setProfilePicPreviewUrl] = useState(profile_pic_link);
   const [bannerFile, setBannerFile] = useState(null);
   const [bannerPreviewUrl, setBannerPreviewUrl] = useState(banner_link);
-
+  
   const uploadFileToCloudinary = async (file) => {
         if (!file) {
             throw new Error('No file selected for upload.');

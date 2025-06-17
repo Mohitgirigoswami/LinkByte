@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import SkeletonPost from "../Home/Skeltonpost";
 import Edit_Profile from "./Edit_Profile";
 
-const Profile = ({ call_404 , setOverLayContent , remove_overlay }) => {
+const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) => {
+
   const { username } = useParams();
   const [isvalid, setIsvalid] = useState(true);
   const [pageno, setPageno] = useState(1);
@@ -24,6 +25,12 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay }) => {
   const [ispostloading, setispostloading] = useState(true);
 
   useEffect(() => {
+    closemenu()
+    if (!username) {
+      call_404();
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         const response = await fetch(`http://127.0.0.1:5000/user/${username}`, {
@@ -43,12 +50,10 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay }) => {
           setIsvalid(true);
         } else if (response.status === 404) {
           setIsvalid(false);
-          setContent(<Error404 error_msg={`${username} not found`} />);
         } else if (response.status === 450) {
           window.location.href = "./";
         } else if (response.status === 500) {
           setIsvalid(false);
-          setContent(<Error404 error_msg={`internal server error`} />);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);

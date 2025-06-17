@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-const Header = ({ isMobile , handlemenuclick }) => {
+import { useNavigate } from "react-router-dom";
+const Header = ({ isMobile , handlemenuclick , picLink , username }) => {
+  const navigate = useNavigate();
   return (
     <>
       {isMobile && (
@@ -23,8 +25,11 @@ const Header = ({ isMobile , handlemenuclick }) => {
           <img className="h-12" src="./logo.png" alt="logo" />
           <img
             className="rounded-full w-12 h-12"
-            src="https://placehold.co/64X64/ffffff/000000/png"
+            src={picLink || 'https://placehold.co/600x600'}
             alt=""
+            onClick={()=>{
+              navigate(`../user/${username}`)
+            }}
           />
         </div>
       )}
