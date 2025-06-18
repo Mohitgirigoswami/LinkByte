@@ -218,6 +218,7 @@ const Edit_Profile = ({ username, bio, profile_pic_link, banner_link, back }) =>
                                 Bio
                             </label>
                             <textarea
+                                maxLength={100}
                                 value={editedBio}
                                 onChange={(e) => setEditedBio(e.target.value)}
                                 rows="4"

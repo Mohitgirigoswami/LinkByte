@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from flask_cors import cross_origin
-from Model import Users,Otp,Posts,Reaction
+from Model import Users,Otp,Posts,Reaction,Follower
 from Config import db,jwt
 from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required
 import bcrypt,os# type: ignore
@@ -89,8 +89,7 @@ def register_routes(app): # Define a function to register routes
         if not user:
             return jsonify({'message': 'Email is not associated with any account'}), 400
 
-        # Find the latest OTP for this user and purpose
-        otp_entry = Otp.query.filter_by(user_id=user.id, purpose="veriemail").order_by(Otp.expiry.desc()).first()
+        otp_entry = Otp.query.filter_by(user_id=user.id, purpose="VERIFY EMAIL").order_by(Otp.expiry.desc()).first()
         if not otp_entry:
             return jsonify({'message': 'No OTP found for this user'}), 400
         
@@ -144,8 +143,8 @@ def register_routes(app): # Define a function to register routes
             data = request.get_json()
             filetype = data.get('filetype')
             filesize = data.get('filesize')
-            if filetype.startswith('video/') and filesize > 100 * 1024 * 1024: # 100 MB
-                return jsonify({'message': 'Video file size cannot exceed 100MB.'}), 400
+            if filetype.startswith('video/') and filesize > 50 * 1024 * 1024: # 50 MB
+                return jsonify({'message': 'Video file size cannot exceed 50MB.'}), 400
             if filetype.startswith('image/') and filesize > 10 * 1024 * 1024: # 10 MB
                 return jsonify({'message': 'Image file size cannot exceed 10MB.'}), 400
             params_to_sign = {
@@ -213,10 +212,10 @@ def register_routes(app): # Define a function to register routes
             print(f"Error creating post: {str(e)}")
             db.session.rollback()
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
-    @app.route('/getpost/<pageno>', methods=['POST', 'OPTIONS'])
+    @app.route('/getposts/<pageno>', methods=['POST', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
-    def getpost(pageno):
+    def getposts(pageno):
         try:
             uuid = get_jwt_identity()
             current_user = Users.query.filter_by(uuid=uuid).first()
@@ -281,6 +280,8 @@ def register_routes(app): # Define a function to register routes
         if not user:
             return jsonify({'message': 'Invalid token'}), 401
         return jsonify({
+            'followers':user.followers.count(),
+            'following':user.following.count(),
             'username': user.username,
             'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
             'banner_link':user.profile_bnr_link or 'https://placehold.co/600x600',
@@ -303,6 +304,8 @@ def register_routes(app): # Define a function to register routes
             return jsonify({'message': 'User not found'}), 404
             
         return jsonify({
+            'followers':user.followers.count(),
+            'following':user.following.count(),
             'isself': username == current_user.username,
             'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
             'banner_link':user.profile_bnr_link or 'https://placehold.co/600x600',
@@ -327,21 +330,37 @@ def register_routes(app): # Define a function to register routes
             page = int(pageno)
             per_page = 10
 
-            posts = Posts.query.filter_by(user_id=user.id)\
-                .order_by(Posts.Time.desc())\
-                .paginate(page=page, per_page=per_page, error_out=False)
+            # Fetch posts for the specified user, eager load reactions
+            posts_query = Posts.query.filter_by(user_id=user.id)\
+                .order_by(Posts.Time.desc())
 
-            if not posts.items:
-                return jsonify({'message': 'No posts found'}), 404
+            posts = posts_query.paginate(page=page, per_page=per_page, error_out=False)
 
-            posts_data = [{
-                'type': post.Type or 'text',
-                'authour_pic_link': user.profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
-                'content': post.Content,
-                'medialink': post.media_link,
-                'author': user.username,
-                'created_at': post.Time.isoformat(),
-            } for post in posts.items]
+
+            posts_data = []
+            for post in posts.items:
+                total_reactions =  post.reactions.count() # Use len() on the loaded collection
+
+                # Find current user's reaction
+                current_user_reaction_type = None
+                if current_user:
+                    # Iterate over loaded reactions
+                    for reaction in post.reactions:
+                        if reaction.user_id == current_user.id:
+                            current_user_reaction_type = reaction.emoji_type
+                            break # Found the reaction, no need to continue
+
+                posts_data.append({
+                    'type': post.Type or 'text',
+                    'authour_pic_link': user.profile_pic_link or 'https://res.cloudinary.com/ddewjx05m/image/upload/v1750016658/f4njd5nzpc71kmrtwdte.jpg',
+                    'content': post.Content,
+                    'medialink': post.media_link,
+                    'author': user.username,
+                    'created_at': post.Time.isoformat(),
+                    'post_uuid': post.uuid,
+                    'total_reactions': total_reactions,
+                    'current_user_reaction': current_user_reaction_type
+                })
 
             return jsonify({
                 'posts': posts_data,
@@ -352,6 +371,7 @@ def register_routes(app): # Define a function to register routes
         except Exception as e:
             print(f"Error fetching user posts: {str(e)}")
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    @app.route('/user/edit', methods=["PATCH", "OPTIONS"])
     @app.route('/user/edit', methods=["PATCH", "OPTIONS"])
     @jwt_required()
     @cross_origin()
@@ -367,25 +387,19 @@ def register_routes(app): # Define a function to register routes
             if not data:
                 return jsonify({'message': 'No data provided'}), 400
 
-            # Handle username update
             if 'username' in data:
                 new_username = data['username']
-                # Check if username is valid
                 if not is_valid_username(new_username):
                     return jsonify({'message': 'Invalid username format'}), 400
-                # Check if username is already taken
                 existing_user = Users.query.filter_by(username=new_username).first()
                 if existing_user and existing_user.id != user.id:
                     return jsonify({'message': 'Username already taken'}), 400
                 user.username = new_username
 
-            # Handle bio update
             if 'bio' in data:
                 user.bio = data['bio']
 
-            # Handle profile picture update
             if 'profile_pic_link' in data:
-                # Delete old profile picture from Cloudinary if exists
                 if user.profile_pic_link:
                     try:
                         old_public_id = user.profile_pic_link.split('/')[-1].split('.')[0]
@@ -416,3 +430,110 @@ def register_routes(app): # Define a function to register routes
             print(f"Error updating user profile: {str(e)}")
             db.session.rollback()
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+        
+    @app.route('/like/<post_id>',methods=['POST', "OPTIONS"])
+    @jwt_required()
+    @cross_origin()
+    def like_post(post_id):
+        uuid = get_jwt_identity()
+        user = Users.query.filter_by(uuid=uuid).first()
+            
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        data = request.get_json()
+        rxn = data.get('reaction')
+        post = Posts.query.filter_by(uuid = post_id).first()
+        if not rxn in ['Like'] or not post:
+            return jsonify({'message': 'invalid request'}), 401
+        reacn = Reaction.query.filter_by(post_id = post.id , user_id = user.id).first()
+        if reacn:
+            db.session.delete(reacn)
+            db.session.commit()
+            return jsonify({'message': 'unliked post'}), 200
+        new = Reaction(
+            post_id = post.id , user_id = user.id, emoji_type = rxn
+        )
+        db.session.add(new)
+        db.session.commit()
+        return jsonify({'message': 'success'}), 200
+    @app.route('/follow/<username>', methods=['POST', "OPTIONS"])
+    @jwt_required()
+    @cross_origin()
+    def followusername(username):
+        try:
+            uuid = get_jwt_identity()
+            follower = Users.query.filter_by(uuid=uuid).first()
+            
+            if not follower:
+                return jsonify({'message': 'Invalid token'}), 401
+    
+            followed = Users.query.filter_by(username=username).first()
+            if not followed:
+                return jsonify({'message': 'User not found'}), 404
+    
+            if follower.id == followed.id:
+                return jsonify({'message': 'Cannot follow yourself'}), 400
+    
+            existing_follow = Follower.query.filter_by(
+                follower_id=follower.id,
+                followed_id=followed.id
+            ).first()
+
+            if existing_follow:
+                # Unfollow
+                db.session.delete(existing_follow)
+                db.session.commit()
+                return jsonify({
+                    'message': 'Unfollowed successfully',
+                    'action': 'unfollow',
+                }), 200
+            else:
+                new_follow = Follower(
+                    follower_id=follower.id,
+                    followed_id=followed.id
+                )
+                db.session.add(new_follow)
+                db.session.commit()
+                return jsonify({
+                    'message': 'Followed successfully',
+                    'action': 'follow',
+                }), 200
+
+        except Exception as e:
+            print(f"Error in follow operation: {str(e)}")
+            db.session.rollback()
+            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    @app.route('/user/<username>/followers', methods=['GET', 'OPTIONS'])
+    @jwt_required()
+    @cross_origin()
+    def get_followers(username):
+        user = Users.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        followers = [
+            {
+                'username': follower.follower_user.username,
+                'profile_pic': follower.follower_user.profile_pic_link or 'https://placehold.co/600x600'
+            }
+            for follower in user.followers
+        ]
+        return jsonify({'followers': followers, 'count': len(followers)}), 200
+
+    @app.route('/user/<username>/following', methods=['GET', 'OPTIONS'])
+    @jwt_required()
+    @cross_origin()
+    def get_following(username):
+        user = Users.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+
+        following = [
+            {
+                'username': follow.followed_user.username,
+                'profile_pic': follow.followed_user.profile_pic_link or 'https://placehold.co/600x600'
+            }
+            for follow in user.following
+        ]
+        return jsonify({'following': following, 'count': len(following)}), 200

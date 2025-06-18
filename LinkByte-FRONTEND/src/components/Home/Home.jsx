@@ -10,6 +10,8 @@ const Home = () => {
   const navigate = useNavigate()
   const [username, setusername] = useState("");
   const [profilelink, setProfileLink] = useState("");
+  const [followers, setFollowers] = useState("");
+  const [following, setFollowing] = useState("");
   useEffect(() => {
     const jwtToken = localStorage.getItem("jwtToken");
 
@@ -43,6 +45,8 @@ const Home = () => {
       .then((data) => {
         setusername(data.username || "");
         setProfileLink(data.profile_pic || "");
+        setFollowers(data.followers);
+        setFollowing(data.following);
       })
       .catch((err) => {
         console.error("Failed to fetch user info:", err);
@@ -61,9 +65,6 @@ const Home = () => {
   };
   const [overlaycontent, setOverLayContent] = useState(null);
 
-  const create_overlay = (content) => {
-    setOverLayContent(content);
-  };
   const remove_overlay = () => {
     setOverLayContent(null);
   };
@@ -103,6 +104,10 @@ const Home = () => {
           toggle={handlemenuclick}
           username={username}
           profilelink={profilelink}
+          followers={followers}
+          following={following}
+          setOverLayContent={setOverLayContent}
+          remove_overlay={remove_overlay}
         />
         {window.location.pathname.split("/")[1] == "user" ? (
           <Profile

@@ -1,12 +1,17 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import Profile_List from "../Profile/Profile_List";
 const Sidemenu = ({
   classplus,
   isMobile,
   sideMenuRef,
   toggle,
   username,
-  profilelink
+  profilelink,
+  followers,
+  following,
+  setOverLayContent,
+  remove_overlay
 }) => {
   const navigate = useNavigate();
   return (
@@ -52,9 +57,9 @@ const Sidemenu = ({
         <p>{username} </p>
         <p className="text-gray-400 -mt-1 ">hello world</p>
         <div className="flex flexrow text-xs">
-          <span>0 Followers</span>
+          <span>{followers} Followers</span>
           <div className="flex-grow"></div>
-          <span>0 Following</span>
+          <span>{following} Following</span>
           <div className="flex-grow"></div>
         </div>
       </div>
@@ -94,7 +99,12 @@ const Sidemenu = ({
         </svg>
         <p>Help</p>
       </div>
-      <div className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
+      <div onClick={
+        () => {
+          localStorage.clear();
+          navigate('/')
+        }
+      } className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"

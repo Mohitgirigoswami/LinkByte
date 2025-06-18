@@ -5,15 +5,20 @@ import Post from "../Home/Post";
 import { useNavigate } from "react-router-dom";
 import SkeletonPost from "../Home/Skeltonpost";
 import Edit_Profile from "./Edit_Profile";
+import Profile_List from "./Profile_List";
 
 const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) => {
-
+  
   const { username } = useParams();
   const [isvalid, setIsvalid] = useState(true);
   const [pageno, setPageno] = useState(1);
   const [posts, setPosts] = useState([]);
   const [isself, setIsself] = useState(false);
   const [bio, setBio] = useState("");
+  const [followers, setFollowers] = useState("");
+  const [following, setFollowing] = useState("");
+  const [followed, setFollowed] = useState(false);
+
   const [isediting, setIsediting] = useState(false);
   const [profile_pic_link, setPiclink] = useState(
     "https://placehold.co/600x600"
@@ -45,6 +50,8 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
           const data = await response.json();
           setIsself(data.isself);
           setBio(data.bio || "");
+          setFollowers(data.followers),
+          setFollowing(data.following),
           setPiclink(data.profile_pic || "https://placehold.co/600x400");
           setBnrlink(data.banner_link || "https://placehold.co/600x200");
           setIsvalid(true);
@@ -61,9 +68,39 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
       }
     };
 
+
     fetchProfile();
   }, [username]);
+ const handleFollow = async () => {
+    // Optimistically update UI
+    const prevIsfollowed = followed;
+    const prevfollowers = followers;
+    const newFollowed = followed ? null : 'liked';
+    const newfollowers = followers ? followers - 1 : followers + 1;
+    setFollowed(newFollowed);
+    setFollowers(newfollowers);
 
+    try {
+      const response = await fetch(`http://localhost:5000/follow/${username}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem("jwtToken")}`,
+        },
+        body: JSON.stringify({
+          message: 'follow',
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Failed to like post");
+      }
+    } catch (error) {
+      // Revert UI changes if request fails
+      setFollowed(prevIsfollowed);
+      setFollowers(prevfollowers);
+      console.error(error);
+    }
+  };
   useEffect(() => {
     const fetchpost = async () => {
       try {
@@ -130,14 +167,15 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
           {isself && (
             <button
               onClick={() => {
-                setOverLayContent(<Edit_Profile
-          username={username}
-          bio={bio}
-          profile_pic_link={profile_pic_link}
-          back = {remove_overlay}
-          banner_link={profile_bnr_link}
-
-      />)
+                setOverLayContent(
+                  <Edit_Profile
+                    username={username}
+                    bio={bio}
+                    profile_pic_link={profile_pic_link}
+                    back={remove_overlay}
+                    banner_link={profile_bnr_link}
+                  />
+                );
               }}
               className="p-1 px-5 mr-5 font-semibold rounded-xl ring-1 ring-gray-400 hover:bg-white hover:text-black transition-colors duration-200"
             >
@@ -154,26 +192,47 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
           <img
             src={profile_pic_link}
             alt="Profile"
-            className="left-[10%] top-[40%]  absolute w-[22%] aspect-square rounded-full object-cover border-gray-500 border-[1px] mb-4"
+            className="left-[10%] top-[11vh] sm:top-[10vh] md:top-[20vh]  absolute w-[22%] aspect-square rounded-full object-cover border-gray-500 border-[1px] mb-4"
           />
-          <div className="pt-12 p-2 w-full">
-            <h1 className="mt-1 text-2xl text-white font-bold ">{username}</h1>
-            <pre className=" w-full text-gray-300">{bio}</pre>
+          <div className="pt-12 p-5 rounded-2xl w-full">
+            <div className="flex flex-row items-center">
+              <h1 className="mt-1 text-2xl text-white font-bold ">{username}</h1>
+              <span className="flex-grow"></span>
+              {!isself && (
+                <button
+                  onClick={handleFollow}
+                  className={`text-base font-semibold px-6 py-2 rounded-full transition-colors duration-200 border-2 ${
+                    followed
+                      ? "bg-white text-gray-900 border-white hover:bg-gray-200"
+                      : "bg-transparent text-white border-white hover:bg-white hover:text-gray-900"
+                  } shadow-md focus:outline-none`}
+                >
+                  {followed ? "Following" : "Follow"}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-row flex-1 mt-2">
+              <span onClick={() => {
+                setOverLayContent(<Profile_List 
+                  remove_overlay={remove_overlay}
+                  username={username}/>)
+              }}>{followers} followers</span>
+              <span className="flex-grow"></span>
+              <span onClick={() => {
+                setOverLayContent(<Profile_List 
+                  remove_overlay={remove_overlay}
+                  toggle={false}
+                  username={username}/>)
+              }}>{following} following</span>
+              <span className="flex-3"></span>
+            </div>
+            <pre className="max-h-36 min-h-12 pt-5 overflow-clip w-full text-gray-300">{bio}</pre>
           </div>
         </div>
         {ispostloading &&
           [...Array(20)].map((_, index) => <SkeletonPost key={index} />)}
         {posts.map((post, index) => (
-          <Post
-            key={index}
-            type={post.type}
-            medialink={post.medialink}
-            authour={post.author}
-            time={post.created_at}
-            content={post.content}
-            authour_profile_link={post.authour_profile_link || null}
-            authour_pic_link={post.authour_pic_link}
-          />
+          <Post key={index} post={post} />
         ))}
       </div>
     </>

@@ -5,7 +5,6 @@ import Auth from './components/Auth/Auth';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Error404 from './components/Error404/Error404';
 import Home from './components/Home/Home';
-import Skeltonpost from './components/Home/Skeltonpost';
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
@@ -13,7 +12,6 @@ createRoot(document.getElementById('root')).render(
           <Route path="/" element={<Auth />} />
           <Route path="/home" element={<Home />}/>
           <Route path='/user/:username' element={<Home />}/>
-          <Route path='/sk' element={<Skeltonpost />}/>
           <Route path="/*" element={<Error404 />} />
           
         </Routes>

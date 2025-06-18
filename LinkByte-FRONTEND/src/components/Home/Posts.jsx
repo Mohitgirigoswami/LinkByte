@@ -6,7 +6,7 @@ const Posts = ({isMobile ,picLink}) => {
     const [isLoading, setIsLoading] = useState(true);
     const [pageNo, setPageNo] = useState(1);
     const getPosts = async () => {
-        const response = await fetch(`http://127.0.0.1:5000/getpost/${pageNo}`, {
+        const response = await fetch(`http://127.0.0.1:5000/getposts/${pageNo}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -50,14 +50,8 @@ const Posts = ({isMobile ,picLink}) => {
             {!isLoading && posts.map((post, index) => (
                 <Post
                     key={index}
-                    type={post.type}
-                    medialink={post.medialink}
-                    authour={post.author}
-                    time={post.created_at}
-                    content={post.content}
-                    authour_profile_link={post.authour_profile_link || null}
-                    authour_pic_link={post.authour_pic_link}
-                />
+                    post={post}
+                    />
             ))}
             {isLoading &&  [...Array(20)].map((_, index) => (
                 <SkeletonPost key={index} /> 
