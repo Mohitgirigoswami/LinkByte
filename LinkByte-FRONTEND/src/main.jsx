@@ -10,7 +10,7 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
         <Routes>
           <Route path="/" element={<Auth />} />
-          <Route path="/home" element={<Home />}/>
+          <Route path="/home/*" element={<Home />}/>
           <Route path='/user/:username' element={<Home />}/>
           <Route path="/*" element={<Error404 />} />
           

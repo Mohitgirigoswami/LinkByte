@@ -5,9 +5,10 @@ import Posts from "./Posts";
 import Profile from "../Profile/Profile";
 import Error404 from "../Error404/Error404";
 import { useNavigate } from "react-router-dom";
+import Search from "../Profile/Search";
 
 const Home = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [username, setusername] = useState("");
   const [profilelink, setProfileLink] = useState("");
   const [followers, setFollowers] = useState("");
@@ -84,6 +85,35 @@ const Home = () => {
     return <Error404 />;
   }
 
+  let mainContent;
+  if (window.location.pathname.split("/")[1] === 'user') {
+    
+      mainContent = (
+        <Profile
+          setOverLayContent={setOverLayContent}
+          remove_overlay={remove_overlay}
+          call_404={call_404}
+          closemenu={() => settoggle(true)}
+        />
+      );
+      }
+    else if (window.location.pathname.split("/")[2] === 'search'){
+      mainContent = <Search  onBack={()=>navigate(-1)}/>
+    }
+    else{
+      mainContent = (
+        <div className="flex flex-col w-screen md:w-[49vw] h-screen">
+          <Header
+            isMobile={isMobile}
+            picLink={profilelink}
+            handlemenuclick={isMobile && handlemenuclick}
+            username={username}
+          />
+          <Posts picLink={profilelink} isMobile={isMobile} />
+        </div>
+      );}
+  
+
   return (
     <>
       {overlaycontent && (
@@ -109,24 +139,8 @@ const Home = () => {
           setOverLayContent={setOverLayContent}
           remove_overlay={remove_overlay}
         />
-        {window.location.pathname.split("/")[1] == "user" ? (
-          <Profile
-            setOverLayContent={setOverLayContent}
-            remove_overlay={remove_overlay}
-            call_404={call_404}
-            closemenu={() => settoggle(true)}
-          />
-        ) : (
-          <div className="flex flex-col w-screen md:w-[49vw] h-screen">
-            <Header
-              isMobile={isMobile}
-              picLink={profilelink}
-              handlemenuclick={isMobile && handlemenuclick}
-              username={username}
-            />
-            <Posts picLink={profilelink} isMobile={isMobile} />
-          </div>
-        )}
+      
+        {mainContent}
       </div>
     </>
   );

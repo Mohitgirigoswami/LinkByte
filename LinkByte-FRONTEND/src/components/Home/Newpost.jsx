@@ -80,11 +80,8 @@ const Newpost = ({ user_pic_link }) => {
 
         try {
             if (mediaFile) {
-                // Use the uploadFile function from the custom hook
                 finalMediaUrl = await uploadFile(mediaFile);
                 if (!finalMediaUrl) {
-                    // If uploadFile returned null, it means there was an upload error
-                    // The error state is already managed by the hook (uploadError)
                     return; 
                 }
             }
@@ -121,13 +118,10 @@ const Newpost = ({ user_pic_link }) => {
             console.error('Error creating post:', error);
             setApiError(error.message || 'An unexpected error occurred during post creation.');
         } 
-        // The `isUploading` state from useCloudinaryUpload handles its loading.
-        // We don't need a separate `loading` state for the whole process if uploadFile takes care of it.
-        // If you need an overall `isSubmitting` for the API call too, you could add one.
-    };
+};
 
     // Combine loading states
-    const isOverallLoading = isUploading; // Or add `isSubmitting` if you create a separate state for the final API call
+    const isOverallLoading = isUploading;
 
     return (
         <div className="p-2.5 rounded-xl h-fit w-full flex flex-row bg-gray-900">

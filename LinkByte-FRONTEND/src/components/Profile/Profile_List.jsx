@@ -50,12 +50,12 @@ const Profile_List = ({ username,remove_overlay, toggle = true }) => {
   return (
     <div className="flex flex-col gap-3 bg-black opacity-80 min-w-[40vh] sm:min-w-[50vh] md:min-w-[60vh] h-[75vh] p-10 rounded-2xl">
       <div className="flex flex-row w-full items-center justify-arround">
-        <h3 className="flex-1 text-center text-xl font-bold">Followers</h3>
-        <h3 className="flex-1 text-center text-xl font-bold">Following</h3>
+        <h3 className="flex-1 text-center text-xl font-bold" onClick={()=>setTGL(true)}>Followers</h3>
+        <h3 className="flex-1 text-center text-xl font-bold" onClick={()=>setTGL(false)}> Following</h3>
         <button
           className="ml-2 p-1 hover:bg-gray-700 rounded-full"
           aria-label="Close"
-          onClick={remove_overlay}
+          onClick={remove_overlay }
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M6 6l12 12M18 6l-12 12"/>

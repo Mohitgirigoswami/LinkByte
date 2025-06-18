@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Profile_List from "../Profile/Profile_List";
+
 const Sidemenu = ({
   classplus,
   isMobile,
@@ -10,8 +10,6 @@ const Sidemenu = ({
   profilelink,
   followers,
   following,
-  setOverLayContent,
-  remove_overlay
 }) => {
   const navigate = useNavigate();
   return (
@@ -25,15 +23,16 @@ const Sidemenu = ({
           : " rounded-l-2xl translate-x-0 max-w-[25vw]")
       }
     >
-      <div className="m-[5%] grid grid-cols-1 w-[90%] pb-5  border-b-2 border-gray-500">
-        <div className=" flex flex-row">
+      {/* Profile Section */}
+      <div className="m-[5%] grid grid-cols-1 w-[90%] pb-5 border-b-2 border-gray-500">
+        <div className="flex flex-row">
           <img
             src={profilelink || "https://placehold.co/600x600"}
             onClick={() => {
               navigate(`../user/${username}`);
             }}
             alt="profile pic"
-            className="rounded-full ring-1 ring-blue-400 w-28 aspect-square"
+            className="rounded-full ring-1 ring-blue-400 w-28 aspect-square cursor-pointer" // Added cursor-pointer
           />
           {isMobile && (
             <svg
@@ -46,7 +45,7 @@ const Sidemenu = ({
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="ml-auto abosolute top-2 right-2 cursor-pointer"
+              className="ml-auto absolute top-2 right-2 cursor-pointer" // Corrected typo "abosolute" to "absolute"
               onClick={toggle}
             >
               <line x1="4" y1="4" x2="16" y2="16" />
@@ -56,7 +55,7 @@ const Sidemenu = ({
         </div>
         <p>{username} </p>
         <p className="text-gray-400 -mt-1 ">hello world</p>
-        <div className="flex flexrow text-xs">
+        <div className="flex flex-row text-xs"> {/* Changed flexrow to flex-row */}
           <span>{followers} Followers</span>
           <div className="flex-grow"></div>
           <span>{following} Following</span>
@@ -64,7 +63,73 @@ const Sidemenu = ({
         </div>
       </div>
 
-      <div className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
+      {/* --- Navigation Links --- */}
+
+      {/* Home Link */}
+      <div
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        onClick={() => {
+          navigate("/home");
+          if (isMobile && toggle) { // Close sidemenu on navigation in mobile
+            toggle();
+          }
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        <p>Home</p>
+      </div>
+
+      {/* Search Link */}
+      <div
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        onClick={() => {
+          navigate("/home/search");
+          if (isMobile && toggle) { // Close sidemenu on navigation in mobile
+            toggle();
+          }
+        }}
+      >
+        {/* Search (Magnifying Glass) Icon */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <p>Search</p>
+      </div>
+
+      {/* Settings Link */}
+      <div
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        onClick={() => {
+            // Add actual navigation for settings here
+            if (isMobile && toggle) {
+                toggle();
+            }
+        }}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -81,7 +146,17 @@ const Sidemenu = ({
         </svg>
         <p>Settings</p>
       </div>
-      <div className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
+
+      {/* Help Link */}
+      <div
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        onClick={() => {
+            // Add actual navigation for help here
+            if (isMobile && toggle) {
+                toggle();
+            }
+        }}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -99,12 +174,15 @@ const Sidemenu = ({
         </svg>
         <p>Help</p>
       </div>
-      <div onClick={
-        () => {
+
+      {/* Logout Link */}
+      <div
+        onClick={() => {
           localStorage.clear();
-          navigate('/')
-        }
-      } className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md">
+          navigate("/");
+        }}
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -125,4 +203,5 @@ const Sidemenu = ({
     </div>
   );
 };
+
 export default Sidemenu;

@@ -9,6 +9,7 @@ import cloudinary # type: ignore
 import cloudinary.uploader# type: ignore
 from datetime import datetime, timedelta
 from sqlalchemy.orm import joinedload
+from sqlalchemy import or_
 cloudinary.config(
     cloud_name=os.getenv("CLOUD_NAME"),
     api_key=os.getenv("API_KEY"),
@@ -537,3 +538,45 @@ def register_routes(app): # Define a function to register routes
             for follow in user.following
         ]
         return jsonify({'following': following, 'count': len(following)}), 200
+    @app.route('/search/user/<query>')
+    def search_user(query):
+        users = Users.query.filter(
+            or_(
+                Users.username.ilike(f"%{query}%"),
+                Users.email.ilike(f"%{query}%")
+            )
+        ).all()
+
+        users_data = [
+            {
+                'username': user.username,
+                'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
+            }
+            for user in users
+        ]
+        return jsonify({'users': users_data, 'count': len(users_data)}), 200
+
+    @app.route('/search/post/<query>')
+    @jwt_required()
+    @cross_origin()
+    def search_post(query):
+        posts = Posts.query.filter(
+                Posts.Content.ilike(f"%{query}%")
+        ).order_by(Posts.Time.desc()).all()
+
+        posts_data = []
+        for post in posts:
+            author = Users.query.get(post.user_id)
+            posts_data.append({
+                'type': post.Type,
+                'author': author.username if author else "N/A",
+                'authour_pic_link': author.profile_pic_link if author and author.profile_pic_link else 'https://placehold.co/600x600',
+                'content': post.Content,
+                'medialink': post.media_link,
+                'created_at': post.Time.isoformat(),
+                'post_uuid': post.uuid,                
+                'total_reactions': post.reactions.count()
+            })
+
+        return jsonify({'posts': posts_data, 'count': len(posts_data)}), 200
+    
