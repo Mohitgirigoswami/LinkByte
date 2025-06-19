@@ -1,10 +1,11 @@
+import hashlib
 from flask import jsonify, request
 from flask_cors import cross_origin
-from Model import Users,Otp,Posts,Reaction,Follower
+from Model import Users,Otp,Posts,Reaction,Follower,Message
 from Config import db,jwt
 from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required
 import bcrypt,os# type: ignore
-from Utility import is_valid_username,is_strong_password,genrate_otp
+from Utility import is_valid_username,is_strong_password,genrate_otp,encrypt,decrypt
 import cloudinary # type: ignore
 import cloudinary.uploader# type: ignore
 from datetime import datetime, timedelta
@@ -16,7 +17,7 @@ cloudinary.config(
     api_secret=os.getenv("API_SECRET"),
     secure=True
 )
-def register_routes(app): # Define a function to register routes
+def register_routes(app):
     @app.route('/register', methods=['POST', 'OPTIONS'])
     @cross_origin()
     def register_user():
@@ -373,7 +374,6 @@ def register_routes(app): # Define a function to register routes
             print(f"Error fetching user posts: {str(e)}")
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
     @app.route('/user/edit', methods=["PATCH", "OPTIONS"])
-    @app.route('/user/edit', methods=["PATCH", "OPTIONS"])
     @jwt_required()
     @cross_origin()
     def edit_user():
@@ -580,3 +580,34 @@ def register_routes(app): # Define a function to register routes
 
         return jsonify({'posts': posts_data, 'count': len(posts_data)}), 200
     
+    @app.route('/send_message/<username>', methods=['POST', "OPTIONS"])
+    def send_message(username):
+        try:
+            uuid = get_jwt_identity()
+            sender = Users.query.filter_by(uuid=uuid).first()
+            if not sender:
+                return jsonify({'message': 'Invalid token'}), 401
+
+            receiver = Users.query.filter_by(username=username).first()
+            if not receiver:
+                return jsonify({'message': 'Receiver not found'}), 404
+
+            data = request.get_json()
+            msg = data.get('msg')
+            if not msg:
+                return jsonify({'message': 'msg empty!!'}), 400
+
+
+            new_msg = Message(
+                sender_id=sender.id,
+                reciver_id=receiver.id,
+                encrypted_data=encrypt(msg),
+                timestamp=datetime.now()
+            )
+            db.session.add(new_msg)
+            db.session.commit()
+            return jsonify({'message': 'Message sent successfully'}), 201
+        except Exception as e:
+            print(f"Error sending message: {str(e)}")
+            db.session.rollback()
+            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500

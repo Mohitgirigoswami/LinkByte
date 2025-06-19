@@ -1,8 +1,8 @@
-import re,smtplib as smtp,random,os
+import re,smtplib as smtp,random,os,base64
 from dotenv import load_dotenv
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 load_dotenv()
 
 SMTP_HOST="smtp.gmail.com"
@@ -53,3 +53,24 @@ def genrate_otp(email,purpose):
     except Exception as e:
         print(e)
         return 404
+
+def load_key() -> bytes:
+    b64_key = os.getenv('ENCRYPTION_KEY')
+    if not b64_key:
+        raise ValueError("ENCRYPTION_KEY environment variable is not set")
+    return base64.b64decode(b64_key)
+
+def encrypt(msg: str) -> bytes:
+    key = load_key()
+    aesgcm = AESGCM(key)
+    nonce = os.urandom(12)  # 96-bit nonce
+    ciphertext = aesgcm.encrypt(nonce, msg.encode(), None)
+    return nonce + ciphertext  # prepend nonce to ciphertext
+
+def decrypt(encrypted_data: bytes) -> str:
+    key = load_key()
+    nonce = encrypted_data[:12]
+    ciphertext = encrypted_data[12:]
+    aesgcm = AESGCM(key)
+    decrypted = aesgcm.decrypt(nonce, ciphertext, None)
+    return decrypted.decode()

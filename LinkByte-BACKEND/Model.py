@@ -101,3 +101,11 @@ class Reaction(db.Model):
 
     def __repr__(self):
         return f"<Reaction user_id={self.user_id} post_id={self.post_id} emoji_type='{self.emoji_type}'>"
+
+class Message(db.Model):
+    __tablename__ = 'messages'
+    id = db.Column(db.Integer, primary_key=True)
+    sender_id = db.Column(db.Integer, nullable=False)
+    reciver_id = db.Column(db.Integer, nullable=False)
+    encrypted_data = db.Column(db.LargeBinary, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)

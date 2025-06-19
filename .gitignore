@@ -7,8 +7,8 @@ logs/
 *.log                       
 
 # --- Frontend (Vite React) Specific Ignores ---
-/LinkByte-FRONTEND/node_modules/ 
-/LinkByte-FRONTEND/dist/         
+*/node_modules/ 
+*/dist/         
 /LinkByte-FRONTEND/dist-ssr/     
 /LinkByte-FRONTEND/*.local       
 /LinkByte-FRONTEND/npm-debug.log*
@@ -29,3 +29,4 @@ logs/
 .vscode/                          # VS Code configuration directory
 *.ntvs* # Node.js Tools for Visual Studio cache
 *.njsproj                         # Node.js project file
+LinkByte-SOCKET
