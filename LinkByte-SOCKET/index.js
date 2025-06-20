@@ -1,6 +1,7 @@
 const { Server: IOServer } = require('socket.io');
 const http = require('http');
 const jwt = require('jsonwebtoken');
+const fetch = require('node-fetch');
 require('dotenv').config();
 const SECRET_KEY = process.env.SECRET_KEY;
 const server = http.createServer();
@@ -15,6 +16,7 @@ io.use((socket, next) => {
         try {
             const decoded = jwt.verify(token, SECRET_KEY);
             socket.sub = decoded.sub;
+            socket.token = token
             next();
             console.log(socket.sub)
         } catch (err) {
@@ -40,7 +42,8 @@ io.on('connection', (socket) => {
 fetch('http://localhost:5000/api/messages', {
     method: 'POST',
     headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization' : `bearer ${socket.token}`
     },
     body: JSON.stringify({
         from: socket.sub,

@@ -39,10 +39,10 @@ const MessengerList = ({ username }) => {
 
   return (
     <div className="p-3 w-screen h-screen flex-col flex bg-gray-900 md:w-full">
-      <div className="px-5 h-screen flex flex-row items-center h-16 flex-1 bg-gray-900 border-b-2 text-xl py-5 border-gray-400 md:border-0">
+      <div className="px-5 h-screen flex flex-row items-center flex-1 bg-gray-900 border-b-2 text-xl py-5 border-gray-400 md:border-0">
         <svg
           onClick={() => {
-            navigate(-1);
+            navigate('/home');
           }}
           xmlns="http://www.w3.org/2000/svg"
           width="24"

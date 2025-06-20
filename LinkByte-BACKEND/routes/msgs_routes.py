@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 from flask_jwt_extended import create_access_token
 from Model import Users, Message
-from Config import db,jwt
+from Config import db,jwt,limiter
 from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required
 from Utility import encrypt,decrypt
 from datetime import datetime, timedelta
@@ -13,6 +13,7 @@ msg_bp = Blueprint('msg', __name__)
 @msg_bp.route('/messages/<username>', methods=['GET'])
 @jwt_required()
 @cross_origin()
+@limiter.limit("25 per minute; 300 per hour", key_func=lambda: get_jwt_identity())
 def handle_messages(username):
     uuid = get_jwt_identity()
     user = Users.query.filter_by(uuid=uuid).first()
@@ -43,6 +44,7 @@ def handle_messages(username):
 @msg_bp.route('/user_to_show_dm',methods = ["GET" , "OPTIONS"])
 @jwt_required()
 @cross_origin()
+@limiter.limit("5 per minute; 80 per hour", key_func=lambda: get_jwt_identity())
 def get_dm_persons():
     current_user_id = Users.query.filter_by(uuid = get_jwt_identity()).first().id
     latest_messages = db.session.execute(
@@ -79,9 +81,14 @@ def get_dm_persons():
     
 @msg_bp.route('/api/messages',methods = ["POST" , "OPTIONS"])
 @cross_origin(origins=["http://127.0.0.1:8000"])
+@jwt_required()
+@limiter.limit("70 per minute; 500 per hour", key_func=lambda: get_jwt_identity())
 def message_api():
+    uuid = get_jwt_identity()
     data = request.get_json()
     u1=data.get('from')
+    if(u1!=uuid):
+        return jsonify({'message':'not authorised'}),400
     u2=data.get('to')
     text = data.get('message')
     if text and u1 and u2:

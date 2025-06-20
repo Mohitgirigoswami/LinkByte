@@ -3,7 +3,7 @@ from flask_cors import cross_origin
 from flask_jwt_extended import create_access_token
 from Model import Users, Otp
 from Utility import is_valid_username, is_strong_password, genrate_otp
-from Config import db
+from Config import db,limiter
 import bcrypt
 from datetime import datetime, timedelta
 
@@ -11,6 +11,7 @@ auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST', 'OPTIONS'])
 @cross_origin()
+@limiter.limit("5 per minute; 40 per hour", key_func=lambda: request.remote_addr)
 def register_user():
     data = request.get_json()
     username = data.get('Username')
@@ -49,6 +50,7 @@ def register_user():
         return jsonify({'message': 'Internal server error'}), 500
 
 @auth_bp.route('/register/otp', methods=['POST', 'OPTIONS'])
+@limiter.limit("3 per minute; 20 per hour", key_func=lambda: request.remote_addr)
 @cross_origin()
 def sendverotp():
     data = request.get_json()
@@ -69,6 +71,7 @@ def sendverotp():
 
 @auth_bp.route('/register/verify', methods=['POST', 'OPTIONS'])
 @cross_origin()
+@limiter.limit("5 per minute; 40 per hour", key_func=lambda: request.remote_addr)
 def verifyreg():
     data = request.get_json()
     email = data.get('Email')
@@ -102,6 +105,7 @@ def verifyreg():
 
 @auth_bp.route('/login', methods=['POST', 'OPTIONS'])
 @cross_origin()
+@limiter.limit("3 per minute; 50 per hour", key_func=lambda: request.remote_addr)
 def login_user():
     data = request.get_json()
     username = data.get('Username')
@@ -112,7 +116,7 @@ def login_user():
             return jsonify({'message': 'incomplete data'}), 400
         user = Users.query.filter_by(username=username).first()
         if not user:
-            return jsonify({'message': 'user does not exist'}), 400
+            jsonify({'message': 'Invalid credentials'}), 401
         if signintype == 'local':
             if not user.status:
                 return jsonify({"message": "Email Not Verified Create new Account"}), 400
@@ -120,7 +124,7 @@ def login_user():
                 token = create_access_token(identity=user.uuid)
                 return jsonify({'message': 'Login successful', 'token': token}), 200
             else:
-                return jsonify({'message': 'Incorrect password'}), 401
+                jsonify({'message': 'Invalid credentials'}), 401
     except Exception as e:
         print(e)
         return jsonify({'message': 'Internal server error'}), 500

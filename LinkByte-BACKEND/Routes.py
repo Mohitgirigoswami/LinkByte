@@ -2,7 +2,7 @@ import hashlib
 from flask import jsonify, request
 from flask_cors import cross_origin
 from Model import Users,Otp,Posts,Reaction,Follower,Message
-from Config import db,jwt
+from Config import db,jwt,limiter
 from flask_jwt_extended import create_access_token,get_jwt_identity, jwt_required
 import bcrypt,os# type: ignore
 from Utility import is_valid_username,is_strong_password,genrate_otp,encrypt,decrypt
@@ -21,6 +21,7 @@ def register_routes(app):
     @app.route('/post/getuploadurl', methods=['POST', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("20 per minute; 200 per hour", key_func=lambda: get_jwt_identity())
     def get_upld_url():
         uuid = get_jwt_identity()
         user = Users.query.filter_by(uuid = uuid).first()
@@ -56,6 +57,7 @@ def register_routes(app):
     @app.route('/post', methods=['POST', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("5 per minute; 50 per hour", key_func=lambda: get_jwt_identity())
     def post():
         try:
             uuid = get_jwt_identity()
@@ -102,6 +104,7 @@ def register_routes(app):
     @app.route('/getposts/<pageno>', methods=['POST', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("20 per minute; 700 per hour", key_func=lambda: get_jwt_identity())
     def getposts(pageno):
         try:
             uuid = get_jwt_identity()
@@ -153,6 +156,7 @@ def register_routes(app):
         except Exception as e:
             print(f"Error fetching posts: {str(e)}")
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    
     @app.route('/health')
     @cross_origin()
     def health():
@@ -161,6 +165,7 @@ def register_routes(app):
     @app.route('/myinfo' , methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("10 per minute; 90 per hour", key_func=lambda: get_jwt_identity())
     def get_my_info():
         uuid = get_jwt_identity()
         user = Users.query.filter_by(uuid = uuid).first()
@@ -178,6 +183,7 @@ def register_routes(app):
     @app.route('/user/<username>', methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("15 per minute; 300 per hour", key_func=lambda: get_jwt_identity())
     def get_user_info(username):
         if not username:
             return jsonify({'message':'username required'}),402
@@ -204,6 +210,7 @@ def register_routes(app):
     @app.route('/user/<username>/post/<pageno>', methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("20 per minute; 300 per hour", key_func=lambda: get_jwt_identity())
     def get_user_post(username,pageno):
         try:
             uuid = get_jwt_identity()
@@ -262,6 +269,7 @@ def register_routes(app):
     @app.route('/user/edit', methods=["PATCH", "OPTIONS"])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("5 per minute; 60 per hour", key_func=lambda: get_jwt_identity())
     def edit_user():
         try:
             uuid = get_jwt_identity()
@@ -321,6 +329,7 @@ def register_routes(app):
     @app.route('/like/<post_id>',methods=['POST', "OPTIONS"])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("30 per minute; 400 per hour", key_func=lambda: get_jwt_identity())
     def like_post(post_id):
         uuid = get_jwt_identity()
         user = Users.query.filter_by(uuid=uuid).first()
@@ -347,6 +356,7 @@ def register_routes(app):
     @app.route('/follow/<username>', methods=['POST', "OPTIONS"])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("10 per minute; 300 per hour", key_func=lambda: get_jwt_identity())
     def followusername(username):
         try:
             uuid = get_jwt_identity()
@@ -394,6 +404,7 @@ def register_routes(app):
     @app.route('/user/<username>/followers', methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("10 per minute; 250 per hour", key_func=lambda: get_jwt_identity())
     def get_followers(username):
         user = Users.query.filter_by(username=username).first()
         if not user:
@@ -411,6 +422,7 @@ def register_routes(app):
     @app.route('/user/<username>/following', methods=['GET', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
+    @limiter.limit("15 per minute; 250 per hour", key_func=lambda: get_jwt_identity())
     def get_following(username):
         user = Users.query.filter_by(username=username).first()
         if not user:
@@ -427,6 +439,7 @@ def register_routes(app):
     @app.route('/search/user/<query>')
     @jwt_required()
     @cross_origin()
+    @limiter.limit("25 per minute; 250 per hour", key_func=lambda: get_jwt_identity())
     def search_user(query):
         users = Users.query.filter(
             or_(
@@ -448,6 +461,8 @@ def register_routes(app):
     @app.route('/search/post/<query>')
     @jwt_required()
     @cross_origin()
+    @limiter.limit("25 per minute; 250 per hour", key_func=lambda: get_jwt_identity())
+    
     def search_post(query):
         posts = Posts.query.filter(
                 Posts.Content.ilike(f"%{query}%")
@@ -467,11 +482,3 @@ def register_routes(app):
                 'total_reactions': post.reactions.count()
             })
         return jsonify({'posts': posts_data, 'count': len(posts_data)}), 200
-    
-    @app.route('/messenger/userlist',methods =["GET"])
-    @jwt_required()
-    @cross_origin()
-    def method_name():
-        
-        pass
-    
