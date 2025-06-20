@@ -18,7 +18,7 @@ logs/
 /LinkByte-FRONTEND/lerna-debug.log* 
 
 # --- Backend (Flask) Specific Ignores ---
-/LinkByte-BACKEND/__pycache__/    
+*/__pycache__    
 /LinkByte-BACKEND/*.pyc           
 /LinkByte-BACKEND/.pytest_cache/  
 /LinkByte-BACKEND/.venv/          
@@ -29,4 +29,3 @@ logs/
 .vscode/                          # VS Code configuration directory
 *.ntvs* # Node.js Tools for Visual Studio cache
 *.njsproj                         # Node.js project file
-LinkByte-SOCKET

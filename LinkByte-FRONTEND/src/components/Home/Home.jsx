@@ -38,7 +38,6 @@ const Home = () => {
           return Promise.reject("Unauthorized or expired token");
         }
         if (!res.ok) {
-          // Handle other non-OK responses (e.g., 500 server error)
           return Promise.reject(`Server error: ${res.status}`);
         }
         return res.json();

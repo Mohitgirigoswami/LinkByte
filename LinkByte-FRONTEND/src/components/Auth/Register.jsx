@@ -28,7 +28,7 @@ const Register = ({ Classplus, handleSwitch }) => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/register", {
+      const response = await fetch("http://127.0.0.1:5000/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,7 +55,7 @@ const Register = ({ Classplus, handleSwitch }) => {
     e.preventDefault();
     setOtpError(null);
     try {
-      const response = await fetch("http://127.0.0.1:5000/register/otp", {
+      const response = await fetch("http://127.0.0.1:5000/auth/register/otp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +80,7 @@ const Register = ({ Classplus, handleSwitch }) => {
     e.preventDefault();
     setOtpError(null);
     try {
-      const response = await fetch("http://127.0.0.1:5000/register/verify", {
+      const response = await fetch("http://127.0.0.1:5000/auth/register/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

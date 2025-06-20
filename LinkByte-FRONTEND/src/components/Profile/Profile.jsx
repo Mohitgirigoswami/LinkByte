@@ -6,103 +6,75 @@ import { useNavigate } from "react-router-dom";
 import SkeletonPost from "../Home/Skeltonpost";
 import Edit_Profile from "./Edit_Profile";
 import Profile_List from "./Profile_List";
+import useFetchProfile from '../../hooks/useFetchProfile';
 
-const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) => {
-  
+const Profile = ({ call_404, setOverLayContent, remove_overlay, closemenu }) => {
   const { username } = useParams();
+  const navigate = useNavigate();
+
   const [isvalid, setIsvalid] = useState(true);
-  const [pageno, setPageno] = useState(1);
-  const [posts, setPosts] = useState([]);
   const [isself, setIsself] = useState(false);
   const [bio, setBio] = useState("");
-  const [followers, setFollowers] = useState("");
-  const [following, setFollowing] = useState("");
+  const [followers, setFollowers] = useState(0); // Initialize with number
+  const [following, setFollowing] = useState(0); // Initialize with number
   const [followed, setFollowed] = useState(false);
+  const [profile_pic_link, setPiclink] = useState("https://placehold.co/600x600");
+  const [profile_bnr_link, setBnrlink] = useState("https://placehold.co/600x600");
 
-  const [isediting, setIsediting] = useState(false);
-  const [profile_pic_link, setPiclink] = useState(
-    "https://placehold.co/600x600"
-  );
-  const [profile_bnr_link, setBnrlink] = useState(
-    "https://placehold.co/600x600"
-  );
-  const navigate = useNavigate(); // <-- Get the navigate function here
+  const [pageno, setPageno] = useState(1);
+  const [posts, setPosts] = useState([]);
   const [ispostloading, setispostloading] = useState(true);
 
+  const { fetchProfile, loading: profileLoading, error: profileError } = useFetchProfile();
+
   useEffect(() => {
-    closemenu()
-    if (!username) {
-      call_404();
-      return;
-    }
+    closemenu();
 
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch(`http://127.0.0.1:5000/user/${username}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-          },
-        });
+    const loadProfileData = async () => {
+      if (!username) {
+        call_404();
+        setIsvalid(false);
+        return;
+      }
 
-        if (response.ok) {
-          const data = await response.json();
+      const data = await fetchProfile(username);
+
+      if (data) {
+        
+        if (data.status === 404 || data.status === 500) {
+          setIsvalid(false);
+        } else if (data.status === 450) {
+           setIsvalid(false); // Consider it invalid if redirected
+        }
+        else {
           setIsself(data.isself);
           setBio(data.bio || "");
-          setFollowers(data.followers),
-          setFollowing(data.following),
+          setFollowers(data.followers);
+          setFollowing(data.following);
           setPiclink(data.profile_pic || "https://placehold.co/600x400");
           setBnrlink(data.banner_link || "https://placehold.co/600x200");
+          setFollowed(data.followed);
           setIsvalid(true);
-        } else if (response.status === 404) {
-          setIsvalid(false);
-        } else if (response.status === 450) {
-          window.location.href = "./";
-        } else if (response.status === 500) {
-          setIsvalid(false);
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+      } else if (profileError) {
+        console.error("Error fetching profile in component:", profileError);
+        setIsvalid(false);
+      } else {
         setIsvalid(false);
       }
     };
 
+    loadProfileData();
+  }, [username, closemenu, call_404, fetchProfile, profileError]); // Add fetchProfile and profileError to dependencies
 
-    fetchProfile();
-  }, [username]);
- const handleFollow = async () => {
-    // Optimistically update UI
-    const prevIsfollowed = followed;
-    const prevfollowers = followers;
-    const newFollowed = followed ? null : 'liked';
-    const newfollowers = followers ? followers - 1 : followers + 1;
-    setFollowed(newFollowed);
-    setFollowers(newfollowers);
-
-    try {
-      const response = await fetch(`http://localhost:5000/follow/${username}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem("jwtToken")}`,
-        },
-        body: JSON.stringify({
-          message: 'follow',
-        })
-      });
-      if (!response.ok) {
-        throw new Error("Failed to like post");
-      }
-    } catch (error) {
-      // Revert UI changes if request fails
-      setFollowed(prevIsfollowed);
-      setFollowers(prevfollowers);
-      console.error(error);
-    }
-  };
   useEffect(() => {
-    const fetchpost = async () => {
+    if (!isvalid || profileLoading) {
+        setispostloading(false); // Stop post loading if profile is invalid or still loading
+        return;
+    }
+
+    const fetchPosts = async () => {
+      setispostloading(true);
       try {
         const response = await fetch(
           `http://127.0.0.1:5000/user/${username}/post/${pageno}`,
@@ -117,28 +89,76 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
 
         if (response.ok) {
           const data = await response.json();
-          setPosts([...posts, ...data.posts]);
-          setispostloading(false);
+          setPosts((prevPosts) => [...prevPosts, ...data.posts]); // Append new posts
         } else if (response.status === 404) {
-          setIsvalid(false);
+          // No more posts to load, but profile might still be valid
+          console.log("No more posts found for this user.");
         } else if (response.status === 450) {
           window.location.href = "./";
         } else if (response.status === 500) {
-          setIsvalid(false);
+          console.error("Server error fetching posts (500)");
         }
       } catch (error) {
-        console.error("Error fetching profile:", error);
-        setIsvalid(false);
+        console.error("Error fetching posts:", error);
+      } finally {
+        setispostloading(false);
       }
     };
 
-    fetchpost();
-  }, [pageno]);
+    fetchPosts();
+  }, [pageno, username, isvalid, profileLoading]); 
+
+  const handleFollow = async () => {
+    const prevIsfollowed = followed;
+    const prevfollowers = followers;
+    const newFollowed = !followed; // Toggle boolean
+    const newfollowers = followed ? followers - 1 : followers + 1;
+    setFollowed(newFollowed);
+    setFollowers(newfollowers);
+
+    try {
+      const response = await fetch(`http://localhost:5000/follow/${username}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem("jwtToken")}`,
+        },
+        body: JSON.stringify({
+          message: newFollowed ? 'follow' : 'unfollow', // Send correct action
+        })
+      });
+      if (!response.ok) {
+        throw new Error("Failed to update follow status");
+      }
+    } catch (error) {
+      // Revert UI changes if request fails
+      setFollowed(prevIsfollowed);
+      setFollowers(prevfollowers);
+      console.error(error);
+    }
+  };
+
+  if (profileLoading) {
+    return (
+      <div className="overflow-y-auto no-scrollbar md:h-[99vh] h-screen w-screen bg-gray-900 md:mt-[1vh] md:mx-[0.4vw] md:w-[49vw] flex flex-col items-center justify-center text-white">
+        Loading profile...
+      </div>
+    );
+  }
+
+  if (profileError) {
+    return (
+      <div className="overflow-y-auto no-scrollbar md:h-[99vh] h-screen w-screen bg-gray-900 md:mt-[1vh] md:mx-[0.4vw] md:w-[49vw] flex flex-col items-center justify-center text-white">
+        Error loading profile: {profileError.message}
+      </div>
+    );
+  }
 
   if (!isvalid) {
-    call_404();
+    // If the profile data indicates it's not valid after the fetch
+    return <Error404 />; // Render your 404 component
   }
-  
+
   return (
     <>
       <div className="overflow-y-auto no-scrollbar md:h-[99vh] h-screen w-screen bg-gray-900 md:mt-[1vh] md:mx-[0.4vw] md:w-[49vw]">
@@ -192,7 +212,7 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
           <img
             src={profile_pic_link}
             alt="Profile"
-            className="left-[10%] top-[11vh] sm:top-[10vh] md:top-[20vh]  absolute w-[22%] aspect-square rounded-full object-cover border-gray-500 border-[1px] mb-4"
+            className="left-[10%] top-[11vh] sm:top-[10vh] md:top-[20vh]  absolute w-[22%] aspect-square rounded-full object-cover border-gray-500 border-[1px] mb-4"
           />
           <div className="pt-12 p-5 rounded-2xl w-full">
             <div className="flex flex-row items-center">
@@ -213,26 +233,34 @@ const Profile = ({ call_404 , setOverLayContent , remove_overlay ,closemenu}) =>
             </div>
             <div className="flex flex-row flex-1 mt-2">
               <span onClick={() => {
-                setOverLayContent(<Profile_List 
+                setOverLayContent(<Profile_List
                   remove_overlay={remove_overlay}
-                  username={username}/>)
-              }}>{followers} followers</span>
+                  username={username}
+                  isFollowers={true} // Pass a prop to distinguish followers/following
+                  />)
+              }} className="cursor-pointer">
+                {followers} followers
+              </span>
               <span className="flex-grow"></span>
               <span onClick={() => {
-                setOverLayContent(<Profile_List 
+                setOverLayContent(<Profile_List
                   remove_overlay={remove_overlay}
-                  toggle={false}
-                  username={username}/>)
-              }}>{following} following</span>
+                  toggle={false} // This was the original prop, consider renaming for clarity
+                  username={username}
+                  isFollowers={false} // Pass a prop to distinguish followers/following
+                  />)
+              }} className="cursor-pointer">
+                {following} following
+              </span>
               <span className="flex-3"></span>
             </div>
             <pre className="max-h-36 min-h-12 pt-5 overflow-clip w-full text-gray-300">{bio}</pre>
           </div>
         </div>
         {ispostloading &&
-          [...Array(20)].map((_, index) => <SkeletonPost key={index} />)}
-        {posts.map((post, index) => (
-          <Post key={index} post={post} />
+          [...Array(3)].map((_, index) => <SkeletonPost key={index} />)} 
+        {posts.map((post) => (
+          <Post key={post.id} post={post} />
         ))}
       </div>
     </>

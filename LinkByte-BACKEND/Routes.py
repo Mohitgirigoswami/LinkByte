@@ -10,7 +10,7 @@ import cloudinary # type: ignore
 import cloudinary.uploader# type: ignore
 from datetime import datetime, timedelta
 from sqlalchemy.orm import joinedload
-from sqlalchemy import or_
+from sqlalchemy import or_,and_
 cloudinary.config(
     cloud_name=os.getenv("CLOUD_NAME"),
     api_key=os.getenv("API_KEY"),
@@ -18,121 +18,6 @@ cloudinary.config(
     secure=True
 )
 def register_routes(app):
-    @app.route('/register', methods=['POST', 'OPTIONS'])
-    @cross_origin()
-    def register_user():
-        data = request.get_json()
-        username = data.get('Username')
-        email = data.get('Email')
-        password = data.get('Password')
-
-        existing_user = Users.query.filter_by(username=username).first()
-        try : 
-            if not is_valid_username(username):
-                return jsonify({'message': 'invalid username'}), 400
-            if not is_strong_password(password):
-                return jsonify({'message': 'weak password'}), 400
-            if existing_user:
-                if existing_user.status:
-                    return jsonify({'message': 'Username already exists'}), 400
-                else:
-                    db.session.delete(existing_user)
-                    db.session.commit()
-            
-            existing_email = Users.query.filter_by(email=email).first()
-            if existing_email:
-                if existing_email.status:
-                    return jsonify({'message': 'Email already exists'}), 400
-                else:
-                    db.session.delete(existing_email)
-                    db.session.commit()
-            
-            salt = bcrypt.gensalt()
-            hash_pass = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
-            new_user = Users(username=username, email=email, hashed_password=hash_pass, signin_type='local',status = False)
-            db.session.add(new_user)
-            db.session.commit()
-            return jsonify({'message': 'User registeration initiated successfully\ncheck Email for OTP to verify OTP in next Step '}), 201
-        except Exception as e : 
-            print(e)
-            return jsonify({'message':'Internal server error'}), 500
-    
-    @app.route('/register/otp', methods=['POST', 'OPTIONS'])
-    @cross_origin()
-    def sendverotp():
-        data = request.get_json()
-        email = data.get('Email')
-        if not email:
-            return jsonify({'message': 'Email is required'}), 400
-        user = Users.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'message': 'Email is not associated with any account'}), 400
-        otp = genrate_otp(email,"VERIFY EMAIL")
-        if otp == 404 :
-            return jsonify({'message': 'Failed to generate OTP'}), 500
-        expiry_time = datetime.now() + timedelta(minutes=10)  # OTP valid for 10 minutes
-        otp_entry = Otp(user_id = user.id , otp=otp, expiry=expiry_time,purpose = "VERIFY EMAIL")
-        db.session.add(otp_entry)
-        db.session.commit()
-        return jsonify({'message': 'OTP sent to email', 'expiry': expiry_time.isoformat()}), 200
-    
-    @app.route('/register/verify', methods=['POST', 'OPTIONS'])
-    @cross_origin()
-    def verifyreg():
-        data = request.get_json()
-        email = data.get('Email')
-        otp = data.get('otp')
-        if not email:
-            return jsonify({'message': 'Email is required'}), 400
-        if not otp:
-            return jsonify({'message': 'OTP is required'}), 400
-
-        user = Users.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'message': 'Email is not associated with any account'}), 400
-
-        otp_entry = Otp.query.filter_by(user_id=user.id, purpose="VERIFY EMAIL").order_by(Otp.expiry.desc()).first()
-        if not otp_entry:
-            return jsonify({'message': 'No OTP found for this user'}), 400
-        
-        if datetime.now() > otp_entry.expiry:
-            db.session.delete(otp_entry) # Add this line
-            db.session.commit()
-            return jsonify({'message': 'OTP has expired'}), 400
-
-        if str(otp_entry.otp) != str(otp):
-            return jsonify({'message': 'Invalid OTP'}), 400
-        db.session.delete(otp_entry) # Add this line
-        db.session.commit() 
-        user.status = True
-        db.session.commit()
-        return jsonify({'message': 'Email verified successfully'}), 200
-    
-    @app.route('/login', methods=['POST', 'OPTIONS'])
-    @cross_origin()
-    def login_user():
-        data = request.get_json()
-        username  =  data.get('Username')
-        password  = data.get('Password')
-        signintype = data.get('signin_type')
-        try:
-            if not username or not password or not signintype:
-                return jsonify({'message' : 'incomplete data'}),400
-            user = Users.query.filter_by(username = username).first()
-            if not user : 
-                return jsonify({'message':'user doesnot exist'}),400
-            if(signintype == 'local'):
-                if user.status == False:
-                    return jsonify({"message" : "Email Not Verified Create new Account"}) , 400
-                if bcrypt.checkpw(password.encode('utf-8'), user.hashed_password.encode('utf-8')):
-                    # Generate JWT token
-                    token = create_access_token(identity=user.uuid)
-                    return jsonify({'message': 'Login successful', 'token': token}), 200
-                else:
-                    return jsonify({'message': 'Incorrect password'}), 401
-        except Exception as e:
-            print(e)
-            return {},500
     @app.route('/post/getuploadurl', methods=['POST', 'OPTIONS'])
     @jwt_required()
     @cross_origin()
@@ -306,6 +191,7 @@ def register_routes(app):
             return jsonify({'message': 'User not found'}), 404
             
         return jsonify({
+            'uuid':user.uuid,
             'followers':user.followers.count(),
             'following':user.following.count(),
             'isself': username == current_user.username,
@@ -539,6 +425,8 @@ def register_routes(app):
         ]
         return jsonify({'following': following, 'count': len(following)}), 200
     @app.route('/search/user/<query>')
+    @jwt_required()
+    @cross_origin()
     def search_user(query):
         users = Users.query.filter(
             or_(
@@ -550,6 +438,7 @@ def register_routes(app):
         users_data = [
             {
                 'username': user.username,
+                'uuid':user.uuid,
                 'profile_pic': user.profile_pic_link or 'https://placehold.co/600x600',
             }
             for user in users
@@ -577,37 +466,12 @@ def register_routes(app):
                 'post_uuid': post.uuid,                
                 'total_reactions': post.reactions.count()
             })
-
         return jsonify({'posts': posts_data, 'count': len(posts_data)}), 200
     
-    @app.route('/send_message/<username>', methods=['POST', "OPTIONS"])
-    def send_message(username):
-        try:
-            uuid = get_jwt_identity()
-            sender = Users.query.filter_by(uuid=uuid).first()
-            if not sender:
-                return jsonify({'message': 'Invalid token'}), 401
-
-            receiver = Users.query.filter_by(username=username).first()
-            if not receiver:
-                return jsonify({'message': 'Receiver not found'}), 404
-
-            data = request.get_json()
-            msg = data.get('msg')
-            if not msg:
-                return jsonify({'message': 'msg empty!!'}), 400
-
-
-            new_msg = Message(
-                sender_id=sender.id,
-                reciver_id=receiver.id,
-                encrypted_data=encrypt(msg),
-                timestamp=datetime.now()
-            )
-            db.session.add(new_msg)
-            db.session.commit()
-            return jsonify({'message': 'Message sent successfully'}), 201
-        except Exception as e:
-            print(f"Error sending message: {str(e)}")
-            db.session.rollback()
-            return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
+    @app.route('/messenger/userlist',methods =["GET"])
+    @jwt_required()
+    @cross_origin()
+    def method_name():
+        
+        pass
+    
