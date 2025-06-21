@@ -1,5 +1,5 @@
 import InfiniteScroll from "react-infinite-scroll-component";
-import MessageInput from "./messageInput";
+import MessageInput from "./MessageInput";
 import MessengerMsg from "./MessengerMsg";
 import { useState, useEffect, useRef } from "react";
 
