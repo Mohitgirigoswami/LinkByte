@@ -7,13 +7,12 @@ from datetime import timedelta
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import os 
-import pymongo
 app = Flask(__name__)
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=["2000 per day", "200 per hour"],
-    storage_uri=os.getenv("MONGODB_URI"),
+    storage_uri=os.getenv("REDIS_URL"),
     strategy="sliding-window-counter" 
 )
 
