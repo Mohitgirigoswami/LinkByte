@@ -25,8 +25,8 @@ const MessageContainer = ({ uuid, username, socket }) => {
 
       if (!res.ok) throw new Error("Failed to fetch messages");
       const data = await res.json();
-
-      setMsgs((prev) => [ ...prev,...data.messages]);
+      data.messages=data.messages
+            setMsgs((prev) => [...new Map([...prev.map((msg) => [msg.msg_uuid, msg]), ...data.messages.map((msg) => [msg.msg_uuid, msg])]).values()]);
       if (page.current >= data.total_pages) setHasMore(false);
       
 
@@ -47,10 +47,14 @@ const MessageContainer = ({ uuid, username, socket }) => {
   };
 useEffect(() => {
   if (!socket) return;
-  const handleIncomingMessage = (msg,id) => {
-    if(id==uuid){
+  const handleIncomingMessage = (data) => {
+    console.log(data)
+    if(data.from==uuid){
+    const msg = data.msg;
     console.log("Received:", msg);
-    setMsgs((prev) => [{msg:msg , from:"rou" }, ...prev]);}
+    console.log(msgs)
+    setMsgs((prev) => [data, ...prev]);}
+    console.log(msgs)
   };
   socket.on('error', () => {
     setMsgs((prev) => prev.slice(1));
@@ -107,7 +111,7 @@ useEffect(() => {
       </div>
 
       <div className="border-t border-gray-700 bg-gray-900">
-        <MessageInput setMsgs={(msg)=>setMsgs((p)=>[msg,...p])} socket={socket} uuid={uuid} />
+        <MessageInput setMsgs={(msg)=>setMsgs((p)=>[msg,...p])} updatemsg={(msg)=>setMsgs((p)=>[msg,...p.slice(1)])} socket={socket} uuid={uuid} />
       </div>
     </>
   );

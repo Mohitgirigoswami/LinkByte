@@ -19,7 +19,7 @@ logs/
 
 # --- Backend (Flask) Specific Ignores ---
 */__pycache__    
-/LinkByte-BACKEND/*.pyc           
+*.pyc           
 /LinkByte-BACKEND/.pytest_cache/  
 /LinkByte-BACKEND/.venv/          
 /LinkByte-BACKEND/instance/  

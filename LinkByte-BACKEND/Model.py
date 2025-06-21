@@ -105,7 +105,10 @@ class Reaction(db.Model):
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
+    msg_uuid = db.Column(db.String(36), unique=True, nullable=False, default=lambda:str(uuid.uuid4()))
     sender_id = db.Column(db.Integer, nullable=False)
     reciver_id = db.Column(db.Integer, nullable=False)
-    encrypted_data = db.Column(db.LargeBinary, nullable=False)
+    encrypted_msg = db.Column(db.LargeBinary, nullable=False)
+    encrypted_url = db.Column(db.LargeBinary, nullable=True)
+    type = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)

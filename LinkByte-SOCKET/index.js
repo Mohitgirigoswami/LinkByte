@@ -1,7 +1,6 @@
 const { Server: IOServer } = require('socket.io');
 const http = require('http');
 const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
 require('dotenv').config();
 const SECRET_KEY = process.env.SECRET_KEY;
 const server = http.createServer();
@@ -35,25 +34,23 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
     socket.join(socket.sub);
 
-    socket.on('message', (message, targetSocketId) => {
-        if(!message || !targetSocketId){
+    socket.on('message', (data) => {
+        if(!data.uuid){
             return;
         }
 fetch('http://localhost:5000/api/messages', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
-        'Authorization' : `bearer ${socket.token}`
+        'Authorization' : `Bearer ${socket.token}`
     },
-    body: JSON.stringify({
-        from: socket.sub,
-        to: targetSocketId,
-        message: message
-    })
+    body: JSON.stringify(data)
 })
 .then(async response => {
     if (response.ok) {
-        io.to(targetSocketId).emit('message', message,socket.sub);
+        const responseData = await response.json(); // Parse the JSON response
+        console.log('Message saved successfully:', responseData);
+        io.to(data.uuid).emit('message', {...data,'from':socket.sub, msg_uuid: responseData.msg_uuid});
     } else {
         socket.emit('error', { message: 'Failed to save message' });
     }
@@ -61,11 +58,11 @@ fetch('http://localhost:5000/api/messages', {
 .catch(error => {
     socket.emit('error', { message: 'Error occurred while saving message', error: error.message });
 });
-console.log(targetSocketId, message);
+console.log(data.uuid, data.msg);
 });
 
 
-    socket.on('disconnect', (reason) => {
+socket.on('disconnect', (reason) => {
         console.log(`Client ${socket.sub ? socket.sub : 'unauthenticated'} disconnected. Reason: ${reason}`);
     });
 });

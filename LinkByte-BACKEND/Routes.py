@@ -114,21 +114,15 @@ def register_routes(app):
 
             page = int(pageno)
             per_page = 10
-
             posts_query = Posts.query.order_by(Posts.Time.desc()).options(db.joinedload(Posts.author))
-
             posts = posts_query.paginate(page=page, per_page=per_page, error_out=False)
-
             if not posts.items:
                 return jsonify({'message': 'No posts found'}), 404
-
             posts_data = []
             for post in posts.items:
                 author_username = post.author.username if post.author else "N/A"
                 author_pic_link = post.author.profile_pic_link if post.author and post.author.profile_pic_link else 'https://placehold.co/600x600'
-
                 total_reactions = post.reactions.count()
-
                 current_user_reaction_type = None
                 if current_user:
                     user_reaction = Reaction.query.filter_by(user_id=current_user.id, post_id=post.id).first()

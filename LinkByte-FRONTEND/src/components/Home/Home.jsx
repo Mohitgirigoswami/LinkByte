@@ -101,7 +101,7 @@ const Home = () => {
     }
     else{
       mainContent = (
-        <div className="flex flex-col w-screen md:w-[49vw] h-screen">
+        <div className="flex flex-col w-screen md:w-full h-screen">
           <Header
             isMobile={isMobile}
             picLink={profilelink}
@@ -122,8 +122,8 @@ const Home = () => {
       )}
       <div
         className={
-          "flex flex-wrap " +
-          (isMobile ? "overflow-hidden" : "w-[75vw] mx-auto")
+          "flex flex-row " +
+          (isMobile ? "overflow-hidden" : "w-[90vw] mx-auto")
         }
       >
         <Sidemenu

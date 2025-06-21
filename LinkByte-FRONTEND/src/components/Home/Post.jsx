@@ -62,8 +62,8 @@ const Post = ({ post }) => {
           <p className="flex-grow"></p>
           <p className="text-gray-400 text-sm">{relativeTime}</p>
         </div>
-        <div className="flex-1">
-          <p className="text-wrap text-gray-200">{content}</p>
+        <div className="flex-1 ">
+          <pre className="text-wrap text-gray-300 font-sans text-xl ">{content}</pre>
           {medialink && type === "video" && (
             <video
               className="ring-1 ring-gray-600 w-full h-auto rounded-lg mt-2"

@@ -120,7 +120,6 @@ const Newpost = ({ user_pic_link }) => {
         } 
 };
 
-    // Combine loading states
     const isOverallLoading = isUploading;
 
     return (
@@ -129,11 +128,16 @@ const Newpost = ({ user_pic_link }) => {
             <div className="flex flex-col w-full gap-2 px-2">
                 <textarea
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="w-full bg-transparent text-gray-200 outline-none resize-none"
+                    onChange={(e) =>{
+                        setApiError("");
+                        setSuccessMessage("");
+                        e.target.style.height = 'auto';
+                        e.target.style.height = `${e.target.scrollHeight}px`;
+                        setContent(e.target.value)}}
+                    className="w-full bg-transparent text-gray-200 outline-none"
                     placeholder="What's happening?"
                     name="content"
-                    disabled={isOverallLoading} // Disable while uploading or posting
+                    disabled={isOverallLoading} 
                 />
                 
                 <div
@@ -178,8 +182,8 @@ const Newpost = ({ user_pic_link }) => {
                         <button
                             type="button"
                             onClick={() => {
-                                setMediaFile(null); // Clears the file and thus the preview
-                                setMediaType("text"); // Reset media type
+                                setMediaFile(null);
+                                setMediaType("text"); 
                             }}
                             className={`absolute top-2 right-2 bg-gray-800 rounded-full p-1 hover:bg-gray-700 ${
                                 isOverallLoading ? 'opacity-50 cursor-not-allowed' : ''

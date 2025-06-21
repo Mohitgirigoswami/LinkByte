@@ -20,7 +20,7 @@ const Sidemenu = ({
         classplus +
         (isMobile
           ? " absolute top-0 left-0 z-50 rounded-r-2xl"
-          : " rounded-l-2xl translate-x-0 max-w-[25vw]")
+          : " rounded-l-2xl translate-x-0 w-[35vw]")
       }
     >
       {/* Profile Section */}
@@ -32,7 +32,7 @@ const Sidemenu = ({
               navigate(`../user/${username}`);
             }}
             alt="profile pic"
-            className="rounded-full ring-1 ring-blue-400 w-28 aspect-square cursor-pointer" // Added cursor-pointer
+            className="rounded-full ring-2 ring-blue-400 w-28 aspect-square cursor-pointer" 
           />
           {isMobile && (
             <svg
@@ -53,21 +53,18 @@ const Sidemenu = ({
             </svg>
           )}
         </div>
-        <p>{username} </p>
-        <p className="text-gray-400 -mt-1 ">hello world</p>
+        <p className="md:text-xl lg:text-2xl xl:text-3xl font-bold">{username} </p>
+        <p className="text-gray-400 -mt-1 md:text-sm lg:text-base xl:text-xl">hello world</p>
         <div className="flex flex-row text-xs"> {/* Changed flexrow to flex-row */}
-          <span>{followers} Followers</span>
+          <span className="md:text-sm lg:text-base  ">{followers} Followers</span>
           <div className="flex-grow"></div>
-          <span>{following} Following</span>
+          <span className="md:text-sm lg:text-base  ">{following} Following</span>
           <div className="flex-grow"></div>
         </div>
       </div>
 
-      {/* --- Navigation Links --- */}
-
-      {/* Home Link */}
       <div
-        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md sm:text-xl md:text-2xl lg:text-3xl"
         onClick={() => {
           navigate("/home");
           if (isMobile && toggle) { // Close sidemenu on navigation in mobile
@@ -94,7 +91,7 @@ const Sidemenu = ({
 
       {/* Search Link */}
       <div
-        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md sm:text-xl md:text-2xl lg:text-3xl"
         onClick={() => {
           navigate("/home/search");
           if (isMobile && toggle) { // Close sidemenu on navigation in mobile
@@ -122,7 +119,7 @@ const Sidemenu = ({
 
 
       <div
-        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md sm:text-xl md:text-2xl lg:text-3xl"
         
       >
         <svg
@@ -142,7 +139,7 @@ const Sidemenu = ({
         <p>Settings</p>
       </div>
       <div
-        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md sm:text-xl md:text-2xl lg:text-3xl"
         onClick={() => {
           navigate("/messenger");
           if (isMobile && toggle) {
@@ -167,7 +164,7 @@ const Sidemenu = ({
         <p>Messenger</p>
       </div>
       <div
-        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md sm:text-xl md:text-2xl lg:text-3xl"
 
       >
         <svg
@@ -194,7 +191,7 @@ const Sidemenu = ({
           localStorage.clear();
           navigate("/");
         }}
-        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md"
+        className="flex items-center w-full space-x-2 cursor-pointer hover:bg-gray-700 p-2 rounded-md sm:text-xl md:text-2xl lg:text-3xl"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

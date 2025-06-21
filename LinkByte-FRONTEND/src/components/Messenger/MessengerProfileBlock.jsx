@@ -35,7 +35,7 @@ const MessengerProfileBlock = ({user , navigate}) => {
                 <div className="mt-1 flex flex-row items-center overflow-clip w-full">
                     {user.last_message && (<><span className="flex-1 text-gray-300 text-sm truncate">
                         {user.from === "you" && <span className="font-semibold text-blue-400">you</span>}
-                        {" " + user.last_message}
+                        {" " +  (user.msg_type === "text" ?  user.last_message : user.msg_type)}
                     </span>
                     <span className="ml-2 truncate px-2 py-0.5 rounded-full bg-blue-600 text-white text-xs font-semibold shadow-sm whitespace-nowrap">
                         {formatDistanceToNow(parseISO(user.timestamp), { addSuffix: true })}

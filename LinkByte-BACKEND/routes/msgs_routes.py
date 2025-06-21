@@ -31,10 +31,12 @@ def handle_messages(username):
 
     return jsonify({
         "messages": [
-            {
-                "msg": decrypt(m.encrypted_data),
+            {   "msg_uuid": m.msg_uuid,
+                "msg": decrypt(m.encrypted_msg),
                 "timestamp": m.timestamp.isoformat(),
-                "from": "you" if m.sender_id == user.id else target.username
+                "from": "you" if m.sender_id == user.id else target.username,
+                "type": m.type,
+                "url": decrypt(m.encrypted_url) if m.encrypted_url else None
             } for m in msgs.items
         ],
         "current_page": msgs.page,
@@ -65,7 +67,7 @@ def get_dm_persons():
     ).fetchall()
     users = []
     for row in latest_messages:
-        other_id = row[2] if row[1] == current_user_id else row[1]
+        other_id = row[3] if row[2] == current_user_id else row[2]
         other_user = Users.query.get(other_id)
         if other_user:
             users.append({
@@ -73,8 +75,10 @@ def get_dm_persons():
                 "profile_pic":other_user.profile_pic_link,
                 "username": other_user.username,
                 "uuid": other_user.uuid,
-                "last_message": decrypt(row[3]),
-                "timestamp": row[4].isoformat()
+                "last_message": decrypt(row[4]) or "No messages",
+                "msg_url": decrypt(row[5]) if row[5] else None,
+                "msg_type": row[6] or "text",
+                "timestamp": row[7].isoformat()
             })
     return jsonify(users), 200
 
@@ -84,29 +88,32 @@ def get_dm_persons():
 @jwt_required()
 @limiter.limit("70 per minute; 500 per hour", key_func=lambda: get_jwt_identity())
 def message_api():
-    uuid = get_jwt_identity()
+    u1 = get_jwt_identity()
     data = request.get_json()
-    u1=data.get('from')
-    if(u1!=uuid):
-        return jsonify({'message':'not authorised'}),400
-    u2=data.get('to')
-    text = data.get('message')
-    if text and u1 and u2:
+    u2=data.get('uuid')
+    text = data.get('msg')
+    url = data.get('url')
+    type = data.get('type') or "text"
+    
+    if (text or url) and u1 and u2:
         u1_obj = Users.query.filter_by(uuid=u1).first()
         u2_obj = Users.query.filter_by(uuid=u2).first()
-        print(u1,u2,u1_obj,u2_obj)
         if not u1_obj or not u2_obj:
             return jsonify({'message': 'User(s) not found'}), 404
-
         encrypted_msg = encrypt(text)
+        encrypted_url = None
+        if data.get('url'):
+            encrypted_url = encrypt(data.get('url'))
         new_msg = Message(
             sender_id=u1_obj.id,
             reciver_id=u2_obj.id,
-            encrypted_data=encrypted_msg,
+            encrypted_msg=encrypted_msg or None,
+            encrypted_url=encrypted_url,
+            type=type or "text",
             timestamp=datetime.now()
         )
         db.session.add(new_msg)
         db.session.commit()
-        return jsonify({'message': 'Message sent successfully' , 'reciver':u2_obj.username}), 201
+        return jsonify({'message': 'Message sent successfully' , 'msg_uuid':new_msg.msg_uuid}), 201
     else : 
         return jsonify({'message':'incomplete data'}),401
