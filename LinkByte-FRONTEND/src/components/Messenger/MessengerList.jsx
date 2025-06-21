@@ -11,11 +11,12 @@ const MessengerList = ({ username }) => {
   const [searchresults, setResults] = useState([]);
   const [users, setUsers] = useState();
   const [loading, setLoading] = useState(true);
+  const BEURL = import.meta.env.VITE_BE_URL;
 
   useEffect(() => {
     const token = localStorage.getItem("jwtToken");
     axios
-      .get("http://127.0.0.1:5000/user_to_show_dm", {
+      .get(`${BEURL}/user_to_show_dm`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

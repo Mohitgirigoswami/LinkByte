@@ -8,13 +8,15 @@ const Messenger = () => {
   const [username, setUsername] = useState("");
   const location = useLocation();
   const pathParts = location.pathname.split("/");
+  const BEURL = import.meta.env.VITE_BE_URL;
+
   useEffect(() => {
     const pathParts = location.pathname.split("/");
     setIsChatting(!!pathParts[2]);
   }, [location.pathname]);
   useEffect(() => {
     const token = localStorage.getItem("jwtToken");
-    fetch("http://127.0.0.1:5000/myinfo", {
+    fetch(`${BEURL}/myinfo`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`, // Use the retrieved token
@@ -43,7 +45,7 @@ const Messenger = () => {
   const [socket, setSocket] = useState();
 
   useEffect(() => {
-    const newSocket = io("http://127.0.0.1:8000", {
+    const newSocket = io(import.meta.env.VITE_SOCKET_URL, {
       auth: {
         token: localStorage.getItem("jwtToken"),
       },

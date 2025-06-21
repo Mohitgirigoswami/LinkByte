@@ -77,7 +77,7 @@ const Profile = ({ call_404, setOverLayContent, remove_overlay, closemenu }) => 
       setispostloading(true);
       try {
         const response = await fetch(
-          `http://127.0.0.1:5000/user/${username}/post/${pageno}`,
+          `${import.meta.env.VITE_BE_URL}/user/${username}/post/${pageno}`,
           {
             method: "GET",
             headers: {
@@ -117,7 +117,7 @@ const Profile = ({ call_404, setOverLayContent, remove_overlay, closemenu }) => 
     setFollowers(newfollowers);
 
     try {
-      const response = await fetch(`http://localhost:5000/follow/${username}`, {
+      const response = await fetch(`${import.meta.env.VITE_BE_URL}/follow/${username}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

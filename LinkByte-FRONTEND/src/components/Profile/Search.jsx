@@ -23,7 +23,7 @@ const Search = ({ toggle = true, onBack }) => {
       setLoading(true);
 
       const response1 = await fetch(
-        `http://127.0.0.1:5000/search/user/${searchQuery}`,
+        `${import.meta.env.VITE_BE_URL}/search/user/${searchQuery}`,
         {
           method: "GET",
           headers: {
@@ -38,7 +38,7 @@ const Search = ({ toggle = true, onBack }) => {
       setUsers(userSearch.users);
 
       const response2 = await fetch(
-        `http://127.0.0.1:5000/search/post/${searchQuery}`,
+        `${import.meta.env.VITE_BE_URL}/search/post/${searchQuery}`,
         {
           method: "GET",
           headers: {

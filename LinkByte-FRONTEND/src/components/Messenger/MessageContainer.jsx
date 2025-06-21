@@ -10,6 +10,8 @@ const MessageContainer = ({ uuid, username, socket }) => {
   const scrollableDivRef = useRef(null);
   const isInitialLoad = useRef(true);
   const page = useRef(0)
+  const BEURL = import.meta.env.VITE_BE_URL;
+
   const fetchmsgs = async () => {
     try {
       
@@ -17,7 +19,7 @@ const MessageContainer = ({ uuid, username, socket }) => {
       const oldScrollHeight = scrollDiv ? scrollDiv.scrollHeight : 0;
       
       page.current = page.current + 1;
-      const res = await fetch(`http://127.0.0.1:5000/messages/${username}?page=${page.current}`, {
+      const res = await fetch(`${BEURL}/messages/${username}?page=${page.current}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
         },

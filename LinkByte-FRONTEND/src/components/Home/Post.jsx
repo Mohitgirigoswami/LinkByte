@@ -27,7 +27,7 @@ const Post = ({ post }) => {
     setLikes(newLikes);
 
     try {
-      const response = await fetch(`http://localhost:5000/like/${post.post_uuid}`, {
+      const response = await fetch(`${import.meta.env.VITE_BE_URL}/like/${post.post_uuid}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

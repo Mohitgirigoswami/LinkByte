@@ -3,6 +3,7 @@ const http = require('http');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const SECRET_KEY = process.env.SECRET_KEY;
+const beurl = process.env.BEURL;
 const server = http.createServer();
 const io = new IOServer(server, {
     cors: {
@@ -38,7 +39,7 @@ io.on('connection', (socket) => {
         if(!data.uuid){
             return;
         }
-fetch('http://localhost:5000/api/messages', {
+fetch(`${beurl}/api/messages`, {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',

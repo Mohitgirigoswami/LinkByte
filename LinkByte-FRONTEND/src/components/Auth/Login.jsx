@@ -4,7 +4,7 @@ const Login = ({Classplus="" , handleSwitch}) => {
   const [Password, setPassword] = useState("");
   const [Error, setError] = useState(null);
   const [Success, setSuccess] = useState(null);
-
+  const BEURL = import.meta.env.VITE_BE_URL;
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -12,7 +12,7 @@ const Login = ({Classplus="" , handleSwitch}) => {
     const signin_type = "local";
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/auth/login", {
+      const response = await fetch(`${BEURL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

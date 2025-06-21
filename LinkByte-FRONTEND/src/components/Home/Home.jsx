@@ -22,8 +22,9 @@ const Home = () => {
       navigate("/");
       return;
     }
+  const BEURL = import.meta.env.VITE_BE_URL;
 
-    fetch("http://127.0.0.1:5000/myinfo", {
+    fetch(`${BEURL}/myinfo`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwtToken}`, // Use the retrieved token

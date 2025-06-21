@@ -8,8 +8,10 @@ const Posts = ({isMobile ,picLink}) => {
     const [hasMore, setHasMore] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [pageNo, setPageNo] = useState(1);
+  const BEURL = import.meta.env.VITE_BE_URL;
+
     const getPosts = async () => {
-        const response = await fetch(`http://127.0.0.1:5000/getposts/${pageNo}`, {
+        const response = await fetch(`${BEURL}/getposts/${pageNo}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

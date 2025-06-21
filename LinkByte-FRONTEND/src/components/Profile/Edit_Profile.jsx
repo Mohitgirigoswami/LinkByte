@@ -87,7 +87,7 @@ const Edit_Profile = ({ username, bio, profile_pic_link, banner_link, back }) =>
                 return; 
             }
 
-            const response = await fetch('http://127.0.0.1:5000/user/edit', {
+            const response = await fetch(`${import.meta.env.VITE_BE_URL}/user/edit`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

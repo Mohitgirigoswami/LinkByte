@@ -11,6 +11,7 @@ const Register = ({ Classplus, handleSwitch }) => {
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState(null);
   const [otpSuccess, setOtpSuccess] = useState(null);
+  const BEURL = import.meta.env.VITE_BE_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +29,7 @@ const Register = ({ Classplus, handleSwitch }) => {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/auth/register", {
+      const response = await fetch(`${BEURL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -45,17 +46,17 @@ const Register = ({ Classplus, handleSwitch }) => {
       const data = await response.json();
       setSuccess(data.message);
       setVerifyotp(true);
+      sendotp();
     } catch (error) {
       console.error("Error during registration:", error);
     }
   };
 
-  const sendotp = async (e) => {
+  const sendotp = async () => {
     setOtpSuccess("Otp is on the way");
-    e.preventDefault();
     setOtpError(null);
     try {
-      const response = await fetch("http://127.0.0.1:5000/auth/register/otp", {
+      const response = await fetch(`${BEURL}/auth/register/otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,7 +81,7 @@ const Register = ({ Classplus, handleSwitch }) => {
     e.preventDefault();
     setOtpError(null);
     try {
-      const response = await fetch("http://127.0.0.1:5000/auth/register/verify", {
+      const response = await fetch(`${BEURL}/auth/register/verify`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -127,7 +128,10 @@ const Register = ({ Classplus, handleSwitch }) => {
              
               <button
                 className="p-2 rounded-2xl w-1/3 bg-blue-600 "
-                onClick={sendotp}
+                onClick={(e)=>{
+                  e.preventDefault();
+                  sendotp();
+                }}
                 value="Send otp"
               >
                 sendotp

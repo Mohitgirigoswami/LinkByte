@@ -18,7 +18,7 @@ const useCloudinaryUpload = () => {
 
     try {
       
-      const response = await fetch('http://127.0.0.1:5000/post/getuploadurl', { 
+      const response = await fetch(`${import.meta.env.VITE_BE_URL}/post/getuploadurl`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

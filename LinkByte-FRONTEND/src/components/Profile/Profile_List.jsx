@@ -10,7 +10,7 @@ const Profile_List = ({ username,remove_overlay, toggle = true }) => {
     const fetchProfiles = async () => {
       try {
         const response1 = await fetch(
-          `http://127.0.0.1:5000/user/${username}/followers`,
+          `${import.meta.env.VITE_BE_URL}/user/${username}/followers`,
           {
             method: "GET",
             headers: {
@@ -24,7 +24,7 @@ const Profile_List = ({ username,remove_overlay, toggle = true }) => {
         const followersData = await response1.json();
         setFollowers(followersData.followers);
         const response2 = await fetch(
-          `http://127.0.0.1:5000/user/${username}/following`,
+          `${import.meta.env.VITE_BE_URL}/user/${username}/following`,
           {
             method: "GET",
             headers: {

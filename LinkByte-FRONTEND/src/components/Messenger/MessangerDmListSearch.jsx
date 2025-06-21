@@ -7,10 +7,11 @@ const MessengerDmListSearch = ({setResults ,setSearchquery,setLoading,searchquer
       setResults([]);
       return;
     }
+  const BEURL = import.meta.env.VITE_BE_URL;
 
     try {
       const response1 = await fetch(
-        `http://127.0.0.1:5000/search/user/${searchquery.trim()}`,
+        `${BEURL}/search/user/${searchquery.trim()}`,
         {
           method: "GET",
           headers: {
