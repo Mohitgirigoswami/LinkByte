@@ -7,7 +7,7 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const beurl = process.env.BEURL;
 
 const server = http.createServer((req, res) => {
-    if (req.url === '/health' && req.method === 'GET') {
+    if (req.url === '/health' && req.method === 'HEAD') {
         res.writeHead(200, {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',          
