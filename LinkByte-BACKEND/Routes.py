@@ -152,7 +152,7 @@ def register_routes(app):
             return jsonify({'message': 'Internal server error', 'error': str(e)}), 500
     
     @app.route('/health')
-    @cross_origin()
+    @cross_origin(origins="*")
     def health():
         return jsonify({'status': 'healthy', 'message': 'Server is running'}), 200
     
