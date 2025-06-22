@@ -7,19 +7,21 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const beurl = process.env.BEURL;
 
 const server = http.createServer((req, res) => {
-    // Health check route
     if (req.url === '/health' && req.method === 'GET') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',          
+          'Access-Control-Allow-Methods': 'GET',      
+          'Access-Control-Allow-Headers': 'Content-Type'
+        });
         res.end(JSON.stringify({ status: 'ok', uptime: process.uptime(), timestamp: new Date() }));
         return;
     }
 
-    // Default 404 response
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not Found');
 });
 
-// Initialize Socket.IO AFTER server is created
 const io = new IOServer(server, {
     cors: {
         origin: [beurl, "https://link-byte-nine.vercel.app"],
@@ -27,7 +29,6 @@ const io = new IOServer(server, {
     }
 });
 
-// JWT Authentication Middleware
 io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (token) {
