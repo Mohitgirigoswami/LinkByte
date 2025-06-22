@@ -6,7 +6,7 @@ import Routes
 from Config import app,db
 load_dotenv()
 from flask_cors import CORS
-CORS(app,origins=[os.getenv("FRONTEND_URL"),os.getenv("SOCKET_URL")])
+CORS(app)
 from routes.auth_routes import auth_bp
 from routes.msgs_routes import msg_bp
 app.register_blueprint(msg_bp)
