@@ -82,6 +82,13 @@ flowchart TD
 
 ---
 
+## Dummy User
+
+*   **Username:** testuser
+*   **Password:** Abcdef12
+
+---
+
 ## Local Development Setup
 
 Instructions to get all three services running locally.
